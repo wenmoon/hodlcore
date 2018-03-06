@@ -6,7 +6,7 @@ class MarketCapitalization(object):
         self.volume_usd_24h = json['total_24h_volume_usd']
 
 class Token(object):
-    def __init__(self, json, balance, currency):
+    def __init__(self, json, balance = 0, currency = 'usd'):
         self.id = json['id']
         self.name = json['name']
         self.symbol = json['symbol']
@@ -27,7 +27,7 @@ class Token(object):
 
     def matches(self, search):
     	search_ci = search.lower()
-    	if search_ci == self.id.lower() or search_ci == self.symbol.lower() or search_ci == self.name.lower():
+    	if search_ci in self.id.lower() or search_ci in self.symbol.lower() or search_ci in self.name.lower():
             return True
         return False
 

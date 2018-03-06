@@ -10,25 +10,30 @@ def get_mcap():
     mcap_json = requests.get(__endpoint_mcap).json()
     return model.MarketCapitalization(mcap_json)
 
-def get_token(name, balance = 0, currency = 'usd'):
+def get_token(name, balance, currency):
     r_token = requests.get(__endpoint_token % (name, currency)).json()[0]
     return model.Token(r_token, balance, currency)
 
 def search_token(search):
     r_tokens = requests.get(__endpoint_tickers_all).json()
     for r_token in r_tokens:
-        token = model.Token(r_token)
-        if token.matches(search):
-            return token
-    return None
+        try:
+            token = model.Token(r_token)
+            if token.matches(search):
+                return token
+        except:
+            return None
 
 def search_tokens(search):
     r_tokens = requests.get(__endpoint_tickers_all).json()
     tokens = []
     for r_token in r_tokens:
-        token = model.Token(r_token)
-        if token.matches(search):
-            tokens.append(token)
+        try:
+            token = model.Token(r_token)
+            if token.matches(search):
+                tokens.append(token)
+        except:
+            pass
     return tokens
 
 def get_portfolio(portfolio_config, currency):
