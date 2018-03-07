@@ -31,7 +31,6 @@ class Token(object):
             return True
         return False
 
-
 class Portfolio(object):
     def __init__(self):
         self.tokens = []
@@ -47,3 +46,14 @@ class Portfolio(object):
         self.tokens.remove(token)
         self.value -= token.value
         self.value_btc -= token.value_btc
+
+class Subreddit(object):
+    def __init__(self, name, subscribers, url):
+        self.name = name
+        self.subscribers = subscribers
+        self.url = url
+
+    def __init__(self, json):
+        self.name = json['display_name']
+        self.subscribers = json['subscribers']
+        self.url = json['url']  
