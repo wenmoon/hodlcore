@@ -8,7 +8,7 @@ __endpoint_token = 'https://api.coinmarketcap.com/v1/ticker/{}/?convert={}'
 __endpoint_mcap = 'https://api.coinmarketcap.com/v1/global/'
 __endpoint_subreddits = 'https://www.reddit.com/r/{}/about.json'
 
-__headers_reddit = { 'User-agent': 'hodlmybot beta' }
+__headers_useragent = { 'User-agent': 'hodlcore beta' }
 
 
 def get_mcap():
@@ -50,7 +50,7 @@ def get_portfolio(portfolio_config, currency):
     return portfolio
 
 def get_subreddit(subreddit):
-    r_subreddit = requests.get(__endpoint_subreddits.format(subreddit), headers = __headers_reddit).json()['data']
+    r_subreddit = requests.get(__endpoint_subreddits.format(subreddit), headers = __headers_useragent).json()['data']
     try:
         return model.Subreddit(r_subreddit)
     except KeyError:
