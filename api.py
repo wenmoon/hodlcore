@@ -3,7 +3,8 @@ import requests
 import json
 import model
 
-__endpoint_tickers_all = 'https://api.coinmarketcap.com/v1/ticker/?limit=10000'
+__endpoint_tokens_all = 'https://api.coinmarketcap.com/v1/ticker/?limit=10000'
+__endpoint_tokens_limit = 'https://api.coinmarketcap.com/v1/ticker/?limit={}'
 __endpoint_token = 'https://api.coinmarketcap.com/v1/ticker/{}/?convert={}'
 __endpoint_mcap = 'https://api.coinmarketcap.com/v1/global/'
 __endpoint_subreddits = 'https://www.reddit.com/r/{}/about.json'
@@ -19,6 +20,16 @@ def get_token(name, balance, currency):
     r_token = requests.get(__endpoint_token.format(name, currency)).json()[0]
     return model.Token(r_token, balance, currency)
 
+def get_top_tokens(limit):
+    r_token = requests.get(__endpoint_tokens_limit.format(limit)).json()[0]
+    tokens = []
+    for r_token in r_tokens:
+        try:
+            tokens.append(model.Token(r_token))
+        except:
+            pass
+    return tokens
+
 def search_token(search):
     r_tokens = requests.get(__endpoint_tickers_all).json()
     for r_token in r_tokens:
@@ -29,21 +40,22 @@ def search_token(search):
         except:
             return None
 
-def search_tokens(search):
-    r_tokens = requests.get(__endpoint_tickers_all).json()
+def search_tokens(search, limit = 100):
+    r_tokens = requests.get(__endpoint_tokens_all).json()
     tokens = []
     for r_token in r_tokens:
         try:
             token = model.Token(r_token)
             if token.matches(search):
                 tokens.append(token)
+            if len(tokens) >= limit:
+                break
         except:
             pass
     return tokens
 
 def get_portfolio(portfolio_config, currency):
     portfolio = model.Portfolio()
-    # get stats for each coin
     for item in portfolio_config:
         token = get_token(item[0], item[1], currency)
         portfolio.add_token(token)
