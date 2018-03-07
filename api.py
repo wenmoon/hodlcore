@@ -17,11 +17,14 @@ def get_mcap():
     return model.MarketCapitalization(mcap_json)
 
 def get_token(name, balance, currency):
-    r_token = requests.get(__endpoint_token.format(name, currency)).json()[0]
-    return model.Token(r_token, balance, currency)
+    try:
+        r_token = requests.get(__endpoint_token.format(name, currency)).json()[0]
+        return model.Token(r_token, balance, currency)
+    except:
+        return None
 
-def get_top_tokens(limit):
-    r_token = requests.get(__endpoint_tokens_limit.format(limit)).json()[0]
+def get_top_tokens(limit = 100):
+    r_tokens = requests.get(__endpoint_tokens_limit.format(limit)).json()
     tokens = []
     for r_token in r_tokens:
         try:
@@ -62,8 +65,8 @@ def get_portfolio(portfolio_config, currency):
     return portfolio
 
 def get_subreddit(subreddit):
-    r_subreddit = requests.get(__endpoint_subreddits.format(subreddit), headers = __headers_useragent).json()['data']
     try:
+        r_subreddit = requests.get(__endpoint_subreddits.format(subreddit), headers = __headers_useragent).json()['data']
         return model.Subreddit(r_subreddit)
     except KeyError:
         return None
