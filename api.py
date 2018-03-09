@@ -19,11 +19,6 @@ __headers_mozilla = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.85 Safari/537.36'
 }
 
-__twitter_consumer_key = '9ZqxxBWv1CvQCOxbA4WtywDRm'
-__twitter_consumer_secret = ''
-__twitter_access_token = '14784715-7nBogDn2zjh4GqWvmziuk0uIhhbbxcvSFYrHFQuRt'
-__twitter_access_token_secret = ''
-
 
 def get_mcap():
     mcap_json = requests.get(__endpoint_mcap).json()
@@ -84,13 +79,12 @@ def get_subreddit(subreddit):
     except KeyError:
         return None
 
-def get_twitter(twitter):
-    auth = tweepy.auth.OAuthHandler(__twitter_consumer_key, __twitter_consumer_secret)
-    auth.set_access_token(__twitter_access_token, __twitter_access_token_secret)
+def get_twitter(twitter, credentials):
+    auth = tweepy.auth.OAuthHandler(credentials.consumer_key, credentials.consumer_secret)
+    auth.set_access_token(credentials.access_token, credentials.access_token_secret)
     tweepy_api = tweepy.API(auth)
     try:
         user = tweepy_api.get_user(twitter)
-        print(user.followers_count)
         return model.Subscribable(twitter, user.followers_count, 'https://twitter.com/{}'.format(twitter))
     except tweepy.error.TweepError:
         return None

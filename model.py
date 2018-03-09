@@ -87,3 +87,10 @@ class Subscribable(object):
     @classmethod
     def from_json(sub, json):
         return sub(json['display_name'], json['subscribers'], json['url'])
+
+class OAuthCredentials(object):
+    def __init__(self, json):
+        self.consumer_key = json['consumer_key']
+        self.consumer_secret = json['consumer_secret']
+        self.access_token = json['access_token']
+        self.access_token_secret = json['access_token_secret']
