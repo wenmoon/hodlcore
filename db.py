@@ -1,27 +1,31 @@
 #!/usr/bin/env python
+
+import time
 import sqlite3
 from sqlite3 import Error
-import time
+import json
 
+#
+# Database operations relating to Market Capitalization
+#
 class MarketCapitalizationDB(object):
     def __init__(self):
         self.database_file = 'data/hodl.db'
-        self.database_table_cmc_mcap = 'coinmarketcap_mcap'
+        self.database_table_cmc_data = 'coinmarketcap_data'
 
         dbc = sqlite3.connect(self.database_file)
         try:
-            dbc.execute('SELECT * FROM {} LIMIT 1').format(self.database_table_cmc_mcap)
+            dbc.execute('SELECT * FROM {} LIMIT 1').format(self.database_table_cmc_data)
         except sqlite3.OperationalError:
             self.create_tables(dbc)
         dbc.close()
 
     def create_tables(self, dbc):
         try:
-            # Create table
             dbc.execute('''CREATE TABLE {}
                         (timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
                          mcap TEXT,
-                         volume REAL)'''.format(self.database_table_cmc_mcap))
+                         volume REAL)'''.format(self.database_table_cmc_data))
             dbc.commit()
         except Error as e:
             print(e)
@@ -31,16 +35,27 @@ class MarketCapitalizationDB(object):
         try:
             dbc.execute('''INSERT INTO {}
                 (mcap, volume) 
-                 VALUES (?, ?)'''.format(self.database_table_cmc_mcap), (
+                 VALUES (?, ?)'''.format(self.database_table_cmc_data), (
                     mcap.mcap_usd,
                     mcap.volume_usd_24h))
+            dbc.commit()
         except KeyError:
             print('Error importing mcap: %s' % mcap)
-        dbc.commit()
+        dbc.close()
+
+    def get_latest(self):
+        dbc = sqlite3.connect(self.database_file)
+        try:
+            return dbc.execute('SELECT * FROM {} ORDER BY timestamp DESC LIMIT 1'.format(self.database_table_cmc_data)).fetchone()
+        except Error as e:
+            print(e)
         dbc.close()
 
 
-class TokensDB(object):
+#
+# Database operations relating to Tokens
+#
+class TokenDB(object):
     def __init__(self):
         self.database_file = 'data/hodl.db'
         self.database_table_cmc_tokens = 'coinmarketcap_tokens'
@@ -92,46 +107,133 @@ class TokensDB(object):
         dbc.commit()
         dbc.close()
 
+    def get_tokens(self):
+        dbc = sqlite3.connect(db)
+        try:
+            tokens = dbc.execute('SELECT * from {} GROUP BY id').fetchall()
+            dbc.close()
+            return list(map(lambda x: model.Token(x), tokens))
+        except:
+            dbc.close()
+            return []    
 
-class RedditDB(object):
-    def __init__(self):
+
+    def get_volumes(self, token):
+        dbc = sqlite3.connect(db)
+        last = dbc.execute(
+            'SELECT volume_usd FROM {} WHERE id=? ORDER BY timestamp DESC LIMIT 1'.format(database_table_cmc_tokens), (token.id,)
+        ).fetchone()
+
+        a_day_ago = dbc.execute(
+            'SELECT volume_usd FROM {} WHERE timestamp BETWEEN datetime("now", "-1 days") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC LIMIT 1'.format(database_table_cmc_tokens), (token.id,)
+        ).fetchone()
+
+        volume_day = dbc.execute(
+            'SELECT volume_usd FROM {} WHERE timestamp BETWEEN datetime("now", "start of day") AND datetime("now", "localtime") AND id=?'.format(database_table_cmc_tokens), (token.id,)
+        ).fetchall()
+        
+        volume_week = dbc.execute(
+            'SELECT volume_usd FROM {} WHERE timestamp BETWEEN datetime("now", "-6 days") AND datetime("now", "localtime") AND id=?'.format(database_table_cmc_tokens), (token.id,)
+        ).fetchall()
+        volume_month = dbc.execute(
+            'SELECT volume_usd FROM {} WHERE timestamp BETWEEN datetime("now", "start of month") AND datetime("now", "localtime") AND id=?'.format(database_table_cmc_tokens), (token.id,)
+        ).fetchall()
+        dbc.close()
+
+        # Todo, use namedtuple?
+        try:
+            ret = {
+                'last': last[0],
+                'yesterday': a_day_ago[0],
+                'day_avg': sum([x[0] for x in volume_day]) / len(volume_day),
+                'week_avg': sum([x[0] for x in volume_week]) / len(volume_week),
+                'month_avg': sum([x[0] for x in volume_month]) / len(volume_month)
+            }
+        except TypeError:
+            return None        
+        return ret
+
+    def get_ranks(self, token):
+        dbc = sqlite3.connect(db)
+        _latest = c.execute(
+            'SELECT rank FROM {} WHERE id=? ORDER BY timestamp DESC LIMIT 2', (token,)
+        )
+        now = _latest.fetchone()
+        last = _latest.fetchone()
+        today = dbc.execute(
+            'SELECT rank FROM {} WHERE timestamp BETWEEN datetime("now", "start of day") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC LIMIT 1'.format(database_table_cmc_tokens), (token.id,)
+        ).fetchone()
+        last_week = dbc.execute(
+            'SELECT rank FROM {} WHERE timestamp BETWEEN datetime("now", "-6 days") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC LIMIT 1'.format(database_table_cmc_tokens), (token.id,)
+        ).fetchone()
+        last_month = dbc.execute(
+            'SELECT rank FROM {} WHERE timestamp BETWEEN datetime("now", "start of month") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC LIMIT 1'.format(database_table_cmc_tokens), (token.id,)
+        ).fetchone()
+        ath = dbc.execute(
+            'SELECT rank FROM {} WHERE id=? ORDER BY rank ASC LIMIT 1'.format(database_table_cmc_tokens), (token.id,)
+        ).fetchone()
+        atl = dbc.execute(
+            'SELECT rank FROM {} WHERE id=? ORDER BY rank DESC LIMIT 1'.format(database_table_cmc_tokens), (token.id,)
+        ).fetchone()
+        dbc.close()
+
+        try:
+            ret = {
+                'now': now[0],
+                'last': last[0],
+                'today': today[0],
+                'last_week': last_week[0],
+                'last_month': last_month[0],
+                'ath': ath[0],
+                'atl': atl[0],
+                'is_ath': now[0] <= ath[0], 
+                'is_atl': now[0] >= atl[0]
+            }
+        except TypeError:
+            return None
+        return ret
+
+    def get_mcaps(self, token):
+        dbc = sqlite3.connect(db)
+        now = dbc.execute(
+            'SELECT market_cap_usd FROM {} WHERE id=? ORDER BY timestamp DESC', (token,)
+        ).fetchone()
+        today = dbc.execute(
+            'SELECT market_cap_usd FROM {} WHERE timestamp BETWEEN datetime("now", "start of day") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC', (token,)
+        ).fetchone()
+        last_week = dbc.execute(
+            'SELECT market_cap_usd FROM {} WHERE timestamp BETWEEN datetime("now", "-6 days") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC', (token,)
+        ).fetchone()
+        last_month = dbc.execute(
+            'SELECT market_cap_usd FROM {} WHERE timestamp BETWEEN datetime("now", "start of month") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC', (token,)
+        ).fetchone()
+        dbc.close()
+
+        ret = {
+            'now': now[0],
+            'today': today[0],
+            'last_week': last_week[0],
+            'last_month': last_month[0]
+        }
+        return ret
+
+
+#
+# Database operations relating to Subscribables, typically Reddit, Twitter, etc where subscribers (and the change thereof) is an interesting metric
+#
+class SubscribableDB(object):
+    def __init__(self, table_name, table_subscribers_name, defaults = []):
         self.database_file = 'data/hodl.db'
-        self.database_table_subreddit = 'subreddit'
-        self.database_table_subreddit_followers = 'subreddit_followers'
+        self.database_table_subreddit = table_name
+        self.database_table_subreddit_subscribers = table_subscribers_name
 
         dbc = sqlite3.connect(self.database_file)
         try:
             dbc.execute('SELECT * FROM {} LIMIT 1'.format(self.database_table_subreddit))
-            dbc.execute('SELECT * FROM {} LIMIT 1'.format(self.database_table_subreddit_followers))
+            dbc.execute('SELECT * FROM {} LIMIT 1'.format(self.database_table_subreddit_subscribers))
         except sqlite3.OperationalError:
             self.create_tables(dbc)
-            default_subreddits = [
-                'bitcoin',
-                'ethereum',
-                'litecoin',
-                'NEO',
-                'nebulas',
-                'Monero',
-                'Ripple',
-                'IOTA',
-                'nanocurrency',
-                'vertcoin',
-                'HEROcoin',
-                'XRPTalk',
-                'Electroneum',
-                'dogecoin',
-                'reddCoin',
-                'Lisk',
-                'siacoin',
-                'steem',
-                'komodoplatform',
-                'SaltCoin',
-                'gnosisPM',
-                'Quantstamp',
-                'COSS',
-                'CossIO',
-            ]
-            for subreddit in default_subreddits:
+            for subreddit in defaults:
                 self.track(subreddit)
         dbc.close()
 
@@ -141,7 +243,7 @@ class RedditDB(object):
             dbc.execute('''CREATE TABLE {}
                         (timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
                         name TEXT,
-                        subscribers INTEGER)'''.format(self.database_table_subreddit_followers))
+                        subscribers INTEGER)'''.format(self.database_table_subreddit_subscribers))
             dbc.commit()
         except Error as e:
             print(e)
@@ -149,10 +251,13 @@ class RedditDB(object):
     def get_tracked(self):
         dbc = sqlite3.connect(self.database_file)
         try:
-            return dbc.execute('SELECT * FROM {}'.format(self.database_table_subreddit)).fetchall()
+            tracked = dbc.execute('SELECT * FROM {}'.format(self.database_table_subreddit)).fetchall()
+            dbc.close()
+            return list(map(lambda x: x[0], tracked))
         except Error as e:
             print(e)
         dbc.close()
+        return []
 
     def track(self, subreddit):
         dbc = sqlite3.connect(self.database_file)
@@ -172,21 +277,82 @@ class RedditDB(object):
         dbc.commit()
         dbc.close()
 
-    def insert_subreddit(self, subreddit):
+    def insert(self, subreddit):
         dbc = sqlite3.connect(self.database_file)
         try:
-            dbc.execute('INSERT INTO {} (name, subscribers) VALUES (?, ?)'.format(self.database_table_subreddit_followers), (subreddit.name, subreddit.subscribers))
+            dbc.execute('INSERT INTO {} (name, subscribers) VALUES (?, ?)'.format(self.database_table_subreddit_subscribers), (subreddit.name, subreddit.subscribers))
         except Error as e:
             print(e)
         dbc.commit()
         dbc.close()
 
-    def insert_subreddits(self, subreddits):
+    def insert_many(self, subreddits):
         dbc = sqlite3.connect(self.database_file)
         for subreddit in subreddits:
             try:
-                dbc.execute('INSERT INTO {} (name, subscribers) VALUES (?, ?)'.format(self.database_table_subreddit_followers), (subreddit.name, subreddit.subscribers))
+                dbc.execute('INSERT INTO {} (name, subscribers) VALUES (?, ?)'.format(self.database_table_subreddit_subscribers), (subreddit.name, subreddit.subscribers))
             except Error as e:
-                print(e)            
+                print(e)
         dbc.commit()
         dbc.close()
+
+    def get_subscribers(self, subreddit):
+        dbc = sqlite3.connect(self.database_file)
+        now = c.execute(
+            'SELECT * FROM {} WHERE subreddit=? ORDER BY timestamp DESC'.format(table_subscribers_name), (sr,)
+        ).fetchone()
+        today = c.execute(
+            'SELECT * FROM {} WHERE timestamp BETWEEN datetime("now", "start of day") AND datetime("now", "localtime") AND subreddit=? ORDER BY timestamp ASC'.format(table_subscribers_name), (subreddit.name,)
+        ).fetchone()
+        last_week = c.execute(
+            'SELECT * FROM {} WHERE timestamp BETWEEN datetime("now", "-6 days") AND datetime("now", "localtime") AND subreddit=? ORDER BY timestamp ASC'.format(table_subscribers_name), (subreddit.name,)
+        ).fetchone()
+        last_month = c.execute(
+            'SELECT * FROM {} WHERE timestamp BETWEEN datetime("now", "start of month") AND datetime("now", "localtime") AND subreddit=? ORDER BY timestamp ASC'.format(table_subscribers_name), (subreddit.name,)
+        ).fetchone()
+        dbc.close()
+
+        try:
+            result = {
+                'name': subreddit.name,
+                'now': float(now[2]),
+                'diff_today': now[2] - today[2],
+                'pct_today': ((now[2]/float(today[2]))-1)*100,
+                'diff_week': now[2] - last_week[2],
+                'pct_week':  ((now[2]/float(last_week[2]))-1)*100,
+                'diff_month': now[2] - last_month[2],
+                'pct_month': ((now[2]/float(last_month[2]))-1)*100
+            }
+        except (TypeError, ZeroDivisionError) as e:
+            # Not in db yet.
+            result = {
+                'name': subreddit.name,
+                'now': 0,
+                'diff_today': 0,
+                'pct_today': 0.0,
+                'diff_week': 0,
+                'pct_week':  0.0,
+                'diff_month': 0,
+                'pct_month': 0.0
+            }
+        return result
+
+
+class TwitterDB(SubscribableDB):
+    def __init__(self):
+        defaults = []
+        with open('defaults-twitter.json', 'r') as file:
+            defaults = json.load(file)
+        super(TwitterDB, self).__init__('twitter', 'twitter_subscribers', defaults)
+
+
+#
+# Database operations relating to Reddit
+#
+class RedditDB(SubscribableDB):
+    def __init__(self):
+        defaults = []
+        with open('defaults-reddit.json', 'r') as file:
+            defaults = json.load(file)
+        super(RedditDB, self).__init__('reddit', 'reddit_subscribers', defaults)
+
