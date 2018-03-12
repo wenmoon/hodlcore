@@ -22,7 +22,7 @@ __headers_mozilla = {
 
 def get_mcap():
     mcap_json = requests.get(__endpoint_mcap).json()
-    return model.MarketCapitalization(mcap_json)
+    return model.MarketCapitalization.from_json(mcap_json)
 
 def get_token(name, balance = 0 , currency = 'usd'):
     try:
@@ -123,7 +123,7 @@ def get_ico_string(token_id):
     try:
         prices = soup.find('div', 'token-price-list').find_all('li')
         roi = soup.find('div', 'col-12 col-md-6 ico-roi').find_all('li')
-        
+
         # Price list
         price_list = []
         for l in prices:
