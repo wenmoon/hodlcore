@@ -198,7 +198,7 @@ class TokenDB(object):
             return None
         return ret
 
-    def get_mcaps(self, token_id):
+    def get_token_mcap_summary(self, token_id):
         dbc = sqlite3.connect(db)
         now = dbc.execute(
             'SELECT market_cap_usd FROM {} WHERE id=? ORDER BY timestamp DESC', (token,)
@@ -214,13 +214,10 @@ class TokenDB(object):
         ).fetchone()
         dbc.close()
 
-        ret = {
-            'now': now[0],
-            'today': today[0],
-            'last_week': last_week[0],
-            'last_month': last_month[0]
-        }
-        return ret
+        try:
+            return model.PeriodicSummary(token_id, now, today, last_week, last_month)
+        except:
+            return None
 
 
 #
@@ -318,30 +315,9 @@ class SubscribableDB(object):
         dbc.close()
 
         try:
-            result = {
-                'name': subscribable.name,
-                'now': float(now[2]),
-                'diff_today': now[2] - today[2],
-                'pct_today': ((now[2]/float(today[2]))-1)*100,
-                'diff_week': now[2] - last_week[2],
-                'pct_week':  ((now[2]/float(last_week[2]))-1)*100,
-                'diff_month': now[2] - last_month[2],
-                'pct_month': ((now[2]/float(last_month[2]))-1)*100
-            }
-        except (TypeError, ZeroDivisionError) as e:
-            # Not in db yet.
-            result = {
-                'name': subscribable.name,
-                'now': 0,
-                'diff_today': 0,
-                'pct_today': 0.0,
-                'diff_week': 0,
-                'pct_week':  0.0,
-                'diff_month': 0,
-                'pct_month': 0.0
-            }
-        return result
-
+            return model.PeriodicSummary(subscribable.name, now, today, last_week, last_month)
+        except:
+            return None
 
 class TwitterDB(SubscribableDB):
     def __init__(self):

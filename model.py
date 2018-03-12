@@ -136,16 +136,16 @@ class Subscribable(object):
     def from_json(sub, json):
         return sub(json['display_name'], json['subscribers'], json['url'])
 
-    # class Summary(name, today, week, month):
-    #     self.name = names
-    #             'now': float(now[2]),
-    #             'diff_today': now[2] - today[2],
-    #             'pct_today': ((now[2]/float(today[2]))-1)*100,
-    #             'diff_week': now[2] - last_week[2],
-    #             'pct_week':  ((now[2]/float(last_week[2]))-1)*100,
-    #             'diff_month': now[2] - last_month[2],
-    #             'pct_month': ((now[2]/float(last_month[2]))-1)*100
-            
+
+class PeriodicSummary(name, now, today, week, month):
+    self.name = names
+    self.now = now
+    self.diff_today = now - today
+    self.pct_today = ((now / today) - 1) * 100
+    self.diff_week = now - last_week
+    self.pct_week =  ((now / last_week) - 1) * 100
+    self.diff_month = now - last_month
+    self.pct_month = ((now / last_month) - 1) * 100
 
 
 class OAuthCredentials(object):
