@@ -42,7 +42,7 @@ def get_top_tokens(limit = 100):
     return tokens
 
 def search_token(search):
-    r_tokens = requests.get(__endpoint_tickers_all).json()
+    r_tokens = requests.get(__endpoint_tokens_all).json()
     for r_token in r_tokens:
         try:
             token = model.Token(r_token)
