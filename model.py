@@ -13,10 +13,10 @@ class MarketCapitalization(object):
         return mcap(json['total_market_cap_usd'], json['total_24h_volume_usd'], json['bitcoin_percentage_of_market_cap'])
 
     def summary(self):
-        s = '*Global data {}:*\n'.format(stringformat.emojis['charts'])
-        s += '*Total Market Cap (USD):* ${}\n'.format(self.mcap_usd)
-        s += '*Total 24h Volume (USD):* ${}\n'.format(self.volume_usd_24h)
-        s += '*BTC Dominance:* {}'.format(self.bitcoin_percentage_of_market_cap)
+        s = '*Global data {}:*\n'.format(stringformat.emoji('charts'))
+        s += '*Total Market Cap (USD):* ${}\n'.format(stringformat.large_number(self.mcap_usd))
+        s += '*Total 24h Volume (USD):* ${}\n'.format(stringformat.large_number(self.volume_usd_24h))
+        s += '*BTC Dominance:* {}'.format(stringformat.percent(self.bitcoin_percentage_of_market_cap, emo=False))
         return s
 
 
