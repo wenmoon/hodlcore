@@ -43,7 +43,7 @@ class Token(object):
         self.id = json['id']
         self.name = json['name']
         self.symbol = json['symbol']
-        self.rank = json['rank']
+        self.rank = int(json['rank'])
         self.price = float(json['price_{}'.format(currency)])
         self.price_btc = float(json['price_btc'])
         self.percent_change_1h = float(json['percent_change_1h'])
