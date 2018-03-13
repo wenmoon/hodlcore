@@ -4,6 +4,9 @@ import json
 import model
 from bs4 import BeautifulSoup
 import tweepy
+import datetime
+
+import stringformat
 
 __endpoint_tokens_all = 'https://api.coinmarketcap.com/v1/ticker/?limit=10000'
 __endpoint_tokens_limit = 'https://api.coinmarketcap.com/v1/ticker/?limit={}'
@@ -89,9 +92,9 @@ def get_twitter(twitter, credentials):
     except tweepy.error.TweepError:
         return None
 
-def get_ico_string(token_id):
-    token = get_token(token_id)
-    ico_response = requests.get(__endpoint_ico.format(coin.lower()), headers=__headers_mozilla)
+def get_ico_text(token_id):
+    token = search_token(token_id)
+    ico_response = requests.get(__endpoint_ico.format(token.id.lower()), headers=__headers_mozilla)
 
     soup = BeautifulSoup(ico_response.text, 'lxml')
     rel_sections = soup.find_all('div', 'white-desk ico-desk')
@@ -144,7 +147,7 @@ def get_ico_string(token_id):
         returns = []
 
     if entr:
-        text = '*ICO Information for %s%s:*\n' % (coin, stringformat.emojis['charts'])
+        text = '*ICO Information for {}{}:*\n'.format(token_id, stringformat.emoji('charts'))
         text += '\n'.join(entr) + '\n'
         if price_list:
             text += '    *Token Price List:*\n' + '\n'.join(price_list) + '\n'

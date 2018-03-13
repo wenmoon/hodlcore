@@ -12,13 +12,6 @@ class MarketCapitalization(object):
     def from_json(mcap, json):
         return mcap(json['total_market_cap_usd'], json['total_24h_volume_usd'], json['bitcoin_percentage_of_market_cap'])
 
-    def summary(self):
-        s = '*Global data {}:*\n'.format(stringformat.emoji('charts'))
-        s += '*Total Market Cap (USD):* ${}\n'.format(stringformat.large_number(self.mcap_usd))
-        s += '*Total 24h Volume (USD):* ${}\n'.format(stringformat.large_number(self.volume_usd_24h))
-        s += '*BTC Dominance:* {}'.format(stringformat.percent(self.bitcoin_percentage_of_market_cap, emo=False))
-        return s
-
 
 class Token(object):
     # @classmethod
@@ -56,11 +49,11 @@ class Token(object):
         self.percent_change_1h = float(json['percent_change_1h'])
         self.percent_change_24h = float(json['percent_change_24h'])
         self.percent_change_7d = float(json['percent_change_7d'])
-        self.volume_24h = json['24h_volume_{}'.format(currency)]
-        self.mcap = json['market_cap_{}'.format(currency)]
-        self.available_supply = json['available_supply']
-        self.total_supply = json['total_supply']
-        self.max_supply = json['total_supply']
+        self.volume_24h = float(json['24h_volume_{}'.format(currency)])
+        self.mcap = float(json['market_cap_{}'.format(currency)])
+        self.available_supply = float(json['available_supply'])
+        self.total_supply = float(json['total_supply'])
+        self.max_supply = float(json['total_supply'])
         #
         self.name_str = '{} ({})'.format(self.name, self.symbol)
         self.balance = balance
@@ -74,42 +67,7 @@ class Token(object):
             return True
         return False
 
-    def summary(self):
-        s = '*Rank:* #{}\n'.format(self.rank)
-        s += '*Price (USD):* ${}\n'.format(self.price)
-        s += '*Price (BTC):* {}\n'.format(self.price_btc)
-        s += '*24h Volume:* {}\n'.format(stringformat.large_number(self.volume_24h))
-        s += '*Market Cap:* {}\n'.format(stringformat.large_number(self.mcap))
-        s += '*Avail. Supply:* {}\n'.format(stringformat.large_number(self.available_supply))
-        s += '*Total Supply:* {}\n'.format(stringformat.large_number(self.total_supply))
-        s += '*Max Supply:* {}\n'.format(stringformat.large_number(self.max_supply))
-        s += '*Change (1h):* {}\n'.format(stringformat.percent(self.percent_change_1h, emo=True))
-        s += '*Change (24h):* {}\n'.format(stringformat.percent(self.percent_change_24h, emo=True))
-        s += '*Change (7d):* {}'.format(stringformat.percent(self.percent_change_7d, emo=True))
-        return s
-
-    def compared_summary(self, other_token):
-        s = '*{} {} {}*:\n'.format(self.name, stringformat.emojis['vs'], other_token.name)
-        s += '*Rank:* #{} vs #{}\n'.format(self.rank, other_token.rank)
-        s += '*Price (USD):* ${} vs ${}\n'.format(self.price, other_token.price)
-        s += '*Price (BTC):* {} vs {}\n'.format(self.price_btc, other_token.price_btc)
-        s += '*24h Volume:* {} vs {}\n'.format(stringformat.large_number(self.volume_usd), stringformat.large_number(other_token.volume_usd))
-        s += '*Market Cap:* {} vs {}\n'.format(stringformat.large_number(self.mcap), stringformat.large_number(other_token.mcap))
-        s += '*Avail. Supply:* {} vs {}\n'.format(stringformat.large_number(self.available_supply), stringformat.large_number(other_token.available_supply))
-        s += '*Total Supply:* {} vs {}\n'.format(stringformat.large_number(self.total_supply), stringformat.large_number(other_token.total_supply))
-        s += '*Max Supply:* {} vs {}\n'.format(stringformat.large_number(self.max_supply), stringformat.large_number(other_token.max_supply))
-        s += '*Change (1h):* {} vs {}\n'.format(stringformat.percent(self.percent_change_1h, emo=True), stringformat.percent(other_token.percent_change_1h, emo=True))
-        s += '*Change (24h):* {} vs {}\n'.format(stringformat.percent(self.percent_change_24h, emo=True), stringformat.percent(other_token.percent_change_24h, emo=True))
-        s += '*Change (7d):* {} vs {}\n'.format(stringformat.percent(self.percent_change_7d, emo=True), stringformat.percent(other_token.percent_change_7d, emo=True))
-        mcap_factor = self.mcap / other_token.mcap
-        mcap_price = mcap_factor * other_token.price_usd
-        vol_factor = self.volume_24h / other_token.volume_24h
-        s += '*{} has {:.2f}x the 24h volume of {}.*\n'.format(self.name, vol_factor, other_token.name)
-        s += '*{} has {:.2f}x the 24h volume of {}.*\n'.format(self.name, vol_factor, other_token.name)
-        s += '*If {} had the market cap of {}, the USD price would be: ${} ({:.1f}x)*'.format(self.name, other_token.name, mcap_price, mcap_factor)
-        return s
-
-
+    
 class Portfolio(object):
     def __init__(self):
         self.tokens = []
