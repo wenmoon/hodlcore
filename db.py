@@ -5,6 +5,7 @@ import sqlite3
 from sqlite3 import Error
 import json
 
+import model
 
 #
 # Database operations relating to Market Capitalization
@@ -51,7 +52,7 @@ class MarketCapitalizationDB(object):
         dbc.row_factory = sqlite3.Row
         try:
             latest = dbc.execute('SELECT * FROM {} ORDER BY timestamp DESC LIMIT 1'.format(self.database_table_cmc_data)).fetchone()
-            return model.MarketCapitalization(latest)
+            return model.MarketCapitalization(float(latest[1]), float(latest[2]), float(latest[3]))
         except Error as e:
             print(e)
         dbc.close()
