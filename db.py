@@ -125,24 +125,24 @@ class TokenDB(object):
 
 
     def get_volumes(self, token_id):
-        dbc = sqlite3.connect(db)
+        dbc = sqlite3.connect(self.database_file)
         last = dbc.execute(
-            'SELECT volume_usd FROM {} WHERE id=? ORDER BY timestamp DESC LIMIT 1'.format(database_table_cmc_tokens), (token_id,)
+            'SELECT volume_usd FROM {} WHERE id=? ORDER BY timestamp DESC LIMIT 1'.format(self.database_table_cmc_tokens), (token_id,)
         ).fetchone()
 
         a_day_ago = dbc.execute(
-            'SELECT volume_usd FROM {} WHERE timestamp BETWEEN datetime("now", "-1 days") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC LIMIT 1'.format(database_table_cmc_tokens), (token_id,)
+            'SELECT volume_usd FROM {} WHERE timestamp BETWEEN datetime("now", "-1 days") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC LIMIT 1'.format(self.database_table_cmc_tokens), (token_id,)
         ).fetchone()
 
         volume_day = dbc.execute(
-            'SELECT volume_usd FROM {} WHERE timestamp BETWEEN datetime("now", "start of day") AND datetime("now", "localtime") AND id=?'.format(database_table_cmc_tokens), (token_id,)
+            'SELECT volume_usd FROM {} WHERE timestamp BETWEEN datetime("now", "start of day") AND datetime("now", "localtime") AND id=?'.format(self.database_table_cmc_tokens), (token_id,)
         ).fetchall()
 
         volume_week = dbc.execute(
-            'SELECT volume_usd FROM {} WHERE timestamp BETWEEN datetime("now", "-6 days") AND datetime("now", "localtime") AND id=?'.format(database_table_cmc_tokens), (token_id,)
+            'SELECT volume_usd FROM {} WHERE timestamp BETWEEN datetime("now", "-6 days") AND datetime("now", "localtime") AND id=?'.format(self.database_table_cmc_tokens), (token_id,)
         ).fetchall()
         volume_month = dbc.execute(
-            'SELECT volume_usd FROM {} WHERE timestamp BETWEEN datetime("now", "start of month") AND datetime("now", "localtime") AND id=?'.format(database_table_cmc_tokens), (token_id,)
+            'SELECT volume_usd FROM {} WHERE timestamp BETWEEN datetime("now", "start of month") AND datetime("now", "localtime") AND id=?'.format(self.database_table_cmc_tokens), (token_id,)
         ).fetchall()
         dbc.close()
 
@@ -160,26 +160,26 @@ class TokenDB(object):
         return ret
 
     def get_ranks(self, token_id):
-        dbc = sqlite3.connect(db)
+        dbc = sqlite3.connect(self.database_file)
         _latest = c.execute(
             'SELECT rank FROM {} WHERE id=? ORDER BY timestamp DESC LIMIT 2', (token,)
         )
         now = _latest.fetchone()
         last = _latest.fetchone()
         today = dbc.execute(
-            'SELECT rank FROM {} WHERE timestamp BETWEEN datetime("now", "start of day") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC LIMIT 1'.format(database_table_cmc_tokens), (token_id,)
+            'SELECT rank FROM {} WHERE timestamp BETWEEN datetime("now", "start of day") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC LIMIT 1'.format(self.database_table_cmc_tokens), (token_id,)
         ).fetchone()
         last_week = dbc.execute(
-            'SELECT rank FROM {} WHERE timestamp BETWEEN datetime("now", "-6 days") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC LIMIT 1'.format(database_table_cmc_tokens), (token_id,)
+            'SELECT rank FROM {} WHERE timestamp BETWEEN datetime("now", "-6 days") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC LIMIT 1'.format(self.database_table_cmc_tokens), (token_id,)
         ).fetchone()
         last_month = dbc.execute(
-            'SELECT rank FROM {} WHERE timestamp BETWEEN datetime("now", "start of month") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC LIMIT 1'.format(database_table_cmc_tokens), (token_id,)
+            'SELECT rank FROM {} WHERE timestamp BETWEEN datetime("now", "start of month") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC LIMIT 1'.format(self.database_table_cmc_tokens), (token_id,)
         ).fetchone()
         ath = dbc.execute(
-            'SELECT rank FROM {} WHERE id=? ORDER BY rank ASC LIMIT 1'.format(database_table_cmc_tokens), (token_id,)
+            'SELECT rank FROM {} WHERE id=? ORDER BY rank ASC LIMIT 1'.format(self.database_table_cmc_tokens), (token_id,)
         ).fetchone()
         atl = dbc.execute(
-            'SELECT rank FROM {} WHERE id=? ORDER BY rank DESC LIMIT 1'.format(database_table_cmc_tokens), (token_id,)
+            'SELECT rank FROM {} WHERE id=? ORDER BY rank DESC LIMIT 1'.format(self.database_table_cmc_tokens), (token_id,)
         ).fetchone()
         dbc.close()
 
@@ -199,19 +199,42 @@ class TokenDB(object):
             return None
         return ret
 
-    def get_token_mcap_summary(self, token_id):
-        dbc = sqlite3.connect(db)
+    def get_prices_btc(self, token_id):
+        dbc = sqlite3.connect(self.database_file)
+        now = dbc.execute(
+            'SELECT price_btc FROM {} WHERE id=? ORDER BY timestamp DESC'.format(self.database_table_cmc_tokens), (token_id,)
+        ).fetchone()
+        today = dbc.execute(
+            'SELECT price_btc FROM {} WHERE timestamp BETWEEN datetime("now", "start of day") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC'.format(self.database_table_cmc_tokens), (token_id,)
+        ).fetchone()
+        last_week = dbc.execute(
+            'SELECT price_btc FROM {} WHERE timestamp BETWEEN datetime("now", "-6 days") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC'.format(self.database_table_cmc_tokens), (token_id,)
+        ).fetchone()
+        last_month = dbc.execute(
+            'SELECT price_btc FROM {} WHERE timestamp BETWEEN datetime("now", "start of month") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC'.format(self.database_table_cmc_tokens), (token_id,)
+        ).fetchone()
+        dbc.close()
+
+        try:
+            return model.PeriodicSummary(token_id, now[0], today[0], last_week[0], last_month[0])
+        except Error as e:
+            print(e)
+            return None
+
+
+    def get_mcaps(self, token_id):
+        dbc = sqlite3.connect(self.database_file)
         now = dbc.execute(
             'SELECT market_cap_usd FROM {} WHERE id=? ORDER BY timestamp DESC'.format(database_table_cmc_tokens), (token_id,)
         ).fetchone()
         today = dbc.execute(
-            'SELECT market_cap_usd FROM {} WHERE timestamp BETWEEN datetime("now", "start of day") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC'.format(database_table_cmc_tokens), (token_id,)
+            'SELECT market_cap_usd FROM {} WHERE timestamp BETWEEN datetime("now", "start of day") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC'.format(self.database_table_cmc_tokens), (token_id,)
         ).fetchone()
         last_week = dbc.execute(
-            'SELECT market_cap_usd FROM {} WHERE timestamp BETWEEN datetime("now", "-6 days") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC'.format(database_table_cmc_tokens), (token_id,)
+            'SELECT market_cap_usd FROM {} WHERE timestamp BETWEEN datetime("now", "-6 days") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC'.format(self.database_table_cmc_tokens), (token_id,)
         ).fetchone()
         last_month = dbc.execute(
-            'SELECT market_cap_usd FROM {} WHERE timestamp BETWEEN datetime("now", "start of month") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC'.format(database_table_cmc_tokens), (token_id,)
+            'SELECT market_cap_usd FROM {} WHERE timestamp BETWEEN datetime("now", "start of month") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC'.format(self.database_table_cmc_tokens), (token_id,)
         ).fetchone()
         dbc.close()
 

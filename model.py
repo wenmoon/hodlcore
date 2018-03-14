@@ -9,10 +9,6 @@ class MarketCapitalization(object):
         self.volume_usd_24h = volume_usd_24h
         self.bitcoin_percentage_of_market_cap = bitcoin_percentage_of_market_cap
 
-    @classmethod
-    def from_json(mcap, json):
-        return mcap(json['total_market_cap_usd'], json['total_24h_volume_usd'], json['bitcoin_percentage_of_market_cap'])
-
 
 class Token(object):
     # @classmethod
@@ -68,6 +64,8 @@ class Token(object):
             return True
         return False
 
+    def is_bitcoin(self):
+        return self.symbol.lower() == 'btc'
     
 class Portfolio(object):
     def __init__(self):
@@ -103,6 +101,9 @@ class PeriodicSummary(object):
         self.pct_week =  ((now / last_week) - 1) * 100
         self.diff_month = now - last_month
         self.pct_month = ((now / last_month) - 1) * 100
+
+    def __str__(self):
+        return 'PeriodicSummary:\n\tName: {}\n\tDiff (d, w, m): {}, {}, {}\n\tPercent (d, w, m): {}, {}, {}'.format(self.name, self.diff_today, self.diff_week, self.diff_month, stringformat.percent(self.pct_today), stringformat.percent(self.pct_week), stringformat.percent(self.pct_month))
 
 
 class OAuthCredentials(object):

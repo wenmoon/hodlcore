@@ -32,9 +32,10 @@ def get_portfolio(portfolio_config, currency):
         portfolio.add_token(token)
     return portfolio
 
+
 def get_mcap():
     mcap_json = requests.get(__endpoint_mcap).json()
-    return model.MarketCapitalization.from_json(mcap_json)
+    return model.MarketCapitalization(mcap_json['total_market_cap_usd'], mcap_json['total_24h_volume_usd'], mcap_json['bitcoin_percentage_of_market_cap'])
 
 
 def get_token(name, balance = 0 , currency = 'usd'):
@@ -72,7 +73,10 @@ def search_tokens(search, limit = 100):
 
 
 def search_token(search):
-    return search_tokens(search, limit=1)[0]
+    try:
+        return search_tokens(search, limit=1)[0]
+    except:
+        return None
 
 
 def get_top_subreddits(limit = 300):

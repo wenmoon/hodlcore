@@ -73,8 +73,9 @@ def mcap_summary(mcap):
     s += '\t*BTC Dominance:* {}'.format(percent(mcap.bitcoin_percentage_of_market_cap, emo=False))
     return s
 
-def token_summary(token):
-    s = '\t*Rank:* #{}\n'.format(token.rank)
+def token_summary(token, btc_summary = None):
+    s = '*{} ({}) {}*:\n'.format(token.name, token.symbol.upper(), emoji('charts'))
+    s += '\t*Rank:* #{}\n'.format(token.rank)
     s += '\t*Price (USD):* ${}\n'.format(token.price)
     s += '\t*Price (BTC):* {}\n'.format(token.price_btc)
     s += '\t*24h Volume:* {}\n'.format(large_number(token.volume_24h))
@@ -82,10 +83,18 @@ def token_summary(token):
     s += '\t*Avail. Supply:* {}\n'.format(large_number(token.available_supply))
     s += '\t*Total Supply:* {}\n'.format(large_number(token.total_supply))
     s += '\t*Max Supply:* {}\n'.format(large_number(token.max_supply))
-    s += '\t*Change (1h):* {}\n'.format(percent(token.percent_change_1h, emo=True))
-    s += '\t*Change (24h):* {}\n'.format(percent(token.percent_change_24h, emo=True))
-    s += '\t*Change (7d):* {}'.format(percent(token.percent_change_7d, emo=True))
+    s += '\t*Change (USD):*\n'
+    s += '```\t\t1h:  {}\n'.format(percent(token.percent_change_1h, emo=True))
+    s += '\t\t24h: {}\n'.format(percent(token.percent_change_24h, emo=True))
+    s += '\t\t7d:  {}```'.format(percent(token.percent_change_7d, emo=True))
+    if btc_summary is not None:
+        s += '\t*Change (BTC)*:\n'
+        s += '```\t\t24h: {}\n'.format(percent(btc_summary.pct_today, emo=True))
+        s += '\t\t7d:  {}\n'.format(percent(btc_summary.pct_week, emo=True))
+        s += '\t\t30d: {}```'.format(percent(btc_summary.pct_month, emo=True))
+
     return s
+
 
 def token_compared_summary(token, other_token):
     s = '*{} {} {}*:\n'.format(token.name, emoji('vs'), other_token.name)
@@ -106,3 +115,4 @@ def token_compared_summary(token, other_token):
     s += '\t*{} has {:.2f}x  the 24h volume of {}.*\n\n'.format(other_token.name, vol_factor, token.name)
     s += '\t*If {} had the cap of {}, the USD price would be: ${} ({:.1f}x)*'.format(token.name, other_token.name, mcap_price, mcap)
     return s
+
