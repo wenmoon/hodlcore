@@ -113,17 +113,6 @@ class TokenDB(object):
         dbc.commit()
         dbc.close()
 
-    def get_token_ids(self):
-        dbc = sqlite3.connect(self.database_file)
-        try:
-            token_ids = dbc.execute('SELECT id from {} GROUP BY id'.format(self.database_table_cmc_tokens)).fetchall()
-            dbc.close()
-            return token_ids
-        except:
-            dbc.close()
-            return []
-
-
     def get_volumes(self, token_id):
         dbc = sqlite3.connect(self.database_file)
         last = dbc.execute(
@@ -225,7 +214,7 @@ class TokenDB(object):
     def get_mcaps(self, token_id):
         dbc = sqlite3.connect(self.database_file)
         now = dbc.execute(
-            'SELECT market_cap_usd FROM {} WHERE id=? ORDER BY timestamp DESC'.format(database_table_cmc_tokens), (token_id,)
+            'SELECT market_cap_usd FROM {} WHERE id=? ORDER BY timestamp DESC'.format(self.database_table_cmc_tokens), (token_id,)
         ).fetchone()
         today = dbc.execute(
             'SELECT market_cap_usd FROM {} WHERE timestamp BETWEEN datetime("now", "start of day") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC'.format(self.database_table_cmc_tokens), (token_id,)
@@ -239,7 +228,7 @@ class TokenDB(object):
         dbc.close()
 
         try:
-            return model.PeriodicSummary(token_id, now, today, last_week, last_month)
+            return model.PeriodicSummary(token_id, now[0], today[0], last_week[0], last_month[0])
         except:
             return None
 

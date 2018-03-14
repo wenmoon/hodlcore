@@ -106,9 +106,10 @@ def token_compared_summary(token, other_token):
     s += '\t*Avail. Supply:* {} vs {}\n'.format(large_number(token.available_supply), large_number(other_token.available_supply))
     s += '\t*Total Supply:* {} vs {}\n'.format(large_number(token.total_supply), large_number(other_token.total_supply))
     s += '\t*Max Supply:* {} vs {}\n'.format(large_number(token.max_supply), large_number(other_token.max_supply))
-    s += '\t*Change (1h):* {} vs {}\n'.format(percent(token.percent_change_1h, emo=True), percent(other_token.percent_change_1h, emo=True))
-    s += '\t*Change (24h):* {} vs {}\n'.format(percent(token.percent_change_24h, emo=True), percent(other_token.percent_change_24h, emo=True))
-    s += '\t*Change (7d):* {} vs {}\n\n'.format(percent(token.percent_change_7d, emo=True), percent(other_token.percent_change_7d, emo=True))
+    s += '\t*Change (USD):*\n'
+    s += '```\t\t1h:  {} vs {}\n'.format(percent(token.percent_change_1h, emo=True), percent(other_token.percent_change_1h, emo=True))
+    s += '\t\t24h: {} vs {}\n'.format(percent(token.percent_change_24h, emo=True), percent(other_token.percent_change_24h, emo=True))
+    s += '\t\t7d:  {} vs {}```'.format(percent(token.percent_change_7d, emo=True), percent(other_token.percent_change_7d, emo=True))
     mcap = other_token.mcap / token.mcap
     mcap_price = mcap * other_token.price
     vol_factor = other_token.volume_24h / token.volume_24h
