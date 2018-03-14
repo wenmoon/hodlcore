@@ -51,8 +51,8 @@ class MarketCapitalizationDB(object):
         dbc = sqlite3.connect(self.database_file)
         dbc.row_factory = sqlite3.Row
         try:
-            latest = dbc.execute('SELECT * FROM {} ORDER BY timestamp DESC LIMIT 1'.format(self.database_table_cmc_data)).fetchone()
-            return model.MarketCapitalization(float(latest[1]), float(latest[2]), float(latest[3]))
+            latest = dbc.execute('SELECT mcap, volume, bitcoin_percentage_of_market_cap FROM {} ORDER BY timestamp DESC LIMIT 1'.format(self.database_table_cmc_data)).fetchone()
+            return model.MarketCapitalization(float(latest[0]), float(latest[1]), float(latest[2]))
         except Error as e:
             print(e)
         dbc.close()
@@ -268,6 +268,8 @@ class SubscribableDB(object):
         dbc = sqlite3.connect(self.database_file)
         try:
             dbc.execute('INSERT INTO {} (name, subscribable_type) VALUES (?, ?)'.format(self.database_table_subscribable), (subscribable, self.subscribable_type))
+        except sqlite3.IntegrityError:
+            pass
         except Error as e:
             print(e)
         dbc.commit()
@@ -327,6 +329,10 @@ class SubscribableDB(object):
             print(e)
             return None
 
+
+#
+# Database operations relating to Twitter
+#
 class TwitterDB(SubscribableDB):
     def __init__(self):
         defaults = []

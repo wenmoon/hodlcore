@@ -10,6 +10,8 @@ import stringformat
 
 __endpoint_tokens_all = 'https://api.coinmarketcap.com/v1/ticker/?limit=10000'
 __endpoint_tokens_limit = 'https://api.coinmarketcap.com/v1/ticker/?limit={}'
+__endpoint_token_scrape = 'https://coinmarketcap.com/currencies/{}'
+__endpoint_token_scrape_social = 'https://coinmarketcap.com/currencies/{}/#social'
 __endpoint_token = 'https://api.coinmarketcap.com/v1/ticker/{}/?convert={}'
 __endpoint_mcap = 'https://api.coinmarketcap.com/v1/global/'
 __endpoint_subreddits = 'https://www.reddit.com/r/{}/about.json'
@@ -23,9 +25,17 @@ __headers_mozilla = {
 }
 
 
+def get_portfolio(portfolio_config, currency):
+    portfolio = model.Portfolio()
+    for item in portfolio_config:
+        token = get_token(item[0], item[1], currency)
+        portfolio.add_token(token)
+    return portfolio
+
 def get_mcap():
     mcap_json = requests.get(__endpoint_mcap).json()
     return model.MarketCapitalization.from_json(mcap_json)
+
 
 def get_token(name, balance = 0 , currency = 'usd'):
     try:
@@ -33,6 +43,7 @@ def get_token(name, balance = 0 , currency = 'usd'):
         return model.Token(r_token, balance, currency)
     except:
         return None
+
 
 def get_top_tokens(limit = 100):
     r_tokens = requests.get(__endpoint_tokens_limit.format(limit)).json()
@@ -44,15 +55,6 @@ def get_top_tokens(limit = 100):
             pass
     return tokens
 
-def search_token(search):
-    r_tokens = requests.get(__endpoint_tokens_all).json()
-    for r_token in r_tokens:
-        try:
-            token = model.Token(r_token)
-            if token.matches(search):
-                return token
-        except:
-            return None
 
 def search_tokens(search, limit = 100):
     r_tokens = requests.get(__endpoint_tokens_all).json()
@@ -68,12 +70,40 @@ def search_tokens(search, limit = 100):
             pass
     return tokens
 
-def get_portfolio(portfolio_config, currency):
-    portfolio = model.Portfolio()
-    for item in portfolio_config:
-        token = get_token(item[0], item[1], currency)
-        portfolio.add_token(token)
-    return portfolio
+
+def search_token(search):
+    return search_tokens(search, limit=1)[0]
+
+
+def get_top_subreddits(limit = 300):
+    top_tokens = get_top_tokens(limit=limit)
+    subscribables = []
+    for token in top_tokens:
+        r = requests.get(__endpoint_token_scrape_social.format(token.id))
+        lines = r.text.split('\n')
+        for line in lines:
+            if 'www.reddit.com' in line:
+                try:
+                    reddit = line.split('"')[1].split('/')[4].split('.')[0]
+                    subscribables.append(reddit)
+                except IndexError:
+                    pass
+    return subscribables
+
+
+def get_top_twitters(limit = 300):
+    top_tokens = get_top_tokens(limit=limit)
+    subscribables = []
+    for token in top_tokens:
+        token_scrape = requests.get(__endpoint_token_scrape.format(token.id))
+        soup = BeautifulSoup(token_scrape.text, 'lxml')
+        try:
+            twitter = soup.find('a', 'twitter-timeline').attrs['data-screen-name']
+            subscribables.append(twitter)
+        except:
+            pass
+    return subscribables
+
 
 def get_subreddit(subreddit):
     try:
@@ -81,6 +111,7 @@ def get_subreddit(subreddit):
         return model.Subscribable(subreddit, r_subreddit['subscribers'], r_subreddit['url'])
     except KeyError:
         return None
+
 
 def get_twitter(twitter, credentials):
     auth = tweepy.auth.OAuthHandler(credentials.consumer_key, credentials.consumer_secret)
@@ -91,6 +122,7 @@ def get_twitter(twitter, credentials):
         return model.Subscribable(twitter, user.followers_count, 'https://twitter.com/{}'.format(twitter))
     except tweepy.error.TweepError:
         return None
+
 
 def get_ico_text(token_id):
     token = search_token(token_id)
@@ -160,13 +192,11 @@ def get_ico_text(token_id):
 
 
 def get_airdrops_text():
-    r = requests.get(__endpoint_airdrop)
+    airdrop_response = requests.get(__endpoint_airdrop)
 
-    soup = BeautifulSoup(r.text, 'lxml')
+    soup = BeautifulSoup(airdrop_response.text, 'lxml')
     events = soup.find_all('div', 'addeventatc')
-
     now = datetime.datetime.now()
-
     i = 1
     for e in events:
         airdrop = {
