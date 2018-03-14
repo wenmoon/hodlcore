@@ -91,14 +91,10 @@ class Subscribable(object):
         self.subscribers = subscribers
         self.url = url
 
-    @classmethod
-    def from_json(sub, json):
-        return sub(json['display_name'], json['subscribers'], json['url'])
-
 
 class PeriodicSummary(object):
-    def __init__(self, name, now, today, week, month):
-        self.name = names
+    def __init__(self, name, now, today, last_week, last_month):
+        self.name = name
         self.now = now
         self.diff_today = now - today
         self.pct_today = ((now / today) - 1) * 100

@@ -78,7 +78,7 @@ def get_portfolio(portfolio_config, currency):
 def get_subreddit(subreddit):
     try:
         r_subreddit = requests.get(__endpoint_subreddits.format(subreddit), headers = __headers_useragent).json()['data']
-        return model.Subscribable.from_json(r_subreddit)
+        return model.Subscribable(subreddit, r_subreddit['subscribers'], r_subreddit['url'])
     except KeyError:
         return None
 

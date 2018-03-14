@@ -202,16 +202,16 @@ class TokenDB(object):
     def get_token_mcap_summary(self, token_id):
         dbc = sqlite3.connect(db)
         now = dbc.execute(
-            'SELECT market_cap_usd FROM {} WHERE id=? ORDER BY timestamp DESC', (token,)
+            'SELECT market_cap_usd FROM {} WHERE id=? ORDER BY timestamp DESC'.format(database_table_cmc_tokens), (token_id,)
         ).fetchone()
         today = dbc.execute(
-            'SELECT market_cap_usd FROM {} WHERE timestamp BETWEEN datetime("now", "start of day") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC', (token_id,)
+            'SELECT market_cap_usd FROM {} WHERE timestamp BETWEEN datetime("now", "start of day") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC'.format(database_table_cmc_tokens), (token_id,)
         ).fetchone()
         last_week = dbc.execute(
-            'SELECT market_cap_usd FROM {} WHERE timestamp BETWEEN datetime("now", "-6 days") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC', (token_id,)
+            'SELECT market_cap_usd FROM {} WHERE timestamp BETWEEN datetime("now", "-6 days") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC'.format(database_table_cmc_tokens), (token_id,)
         ).fetchone()
         last_month = dbc.execute(
-            'SELECT market_cap_usd FROM {} WHERE timestamp BETWEEN datetime("now", "start of month") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC', (token_id,)
+            'SELECT market_cap_usd FROM {} WHERE timestamp BETWEEN datetime("now", "start of month") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC'.format(database_table_cmc_tokens), (token_id,)
         ).fetchone()
         dbc.close()
 
@@ -225,10 +225,11 @@ class TokenDB(object):
 # Database operations relating to Subscribables, typically Reddit, Twitter, etc where subscribers (and the change thereof) is an interesting metric
 #
 class SubscribableDB(object):
-    def __init__(self, table_name, table_subscribers_name, defaults = []):
+    def __init__(self, table_name, table_subscribers_name, subscribable_type, defaults = []):
         self.database_file = 'data/hodl.db'
         self.database_table_subscribable = table_name
         self.database_table_subscribable_subscribers = table_subscribers_name
+        self.subscribable_type = subscribable_type
 
         dbc = sqlite3.connect(self.database_file)
         try:
@@ -242,10 +243,11 @@ class SubscribableDB(object):
 
     def create_tables(self, dbc):
         try:
-            dbc.execute('CREATE TABLE {} (name TEXT PRIMARY KEY)'.format(self.database_table_subscribable))
+            dbc.execute('CREATE TABLE {} (name TEXT PRIMARY KEY, subscribable_type TEXT)'.format(self.database_table_subscribable))
             dbc.execute('''CREATE TABLE {}
                         (timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
                         name TEXT,
+                        subscribable_type TEXT,
                         subscribers INTEGER)'''.format(self.database_table_subscribable_subscribers))
             dbc.commit()
         except Error as e:
@@ -254,7 +256,7 @@ class SubscribableDB(object):
     def get_tracked(self):
         dbc = sqlite3.connect(self.database_file)
         try:
-            tracked = dbc.execute('SELECT * FROM {}'.format(self.database_table_subscribable)).fetchall()
+            tracked = dbc.execute('SELECT * FROM {} WHERE subscribable_type=?'.format(self.database_table_subscribable), (self.subscribable_type,)).fetchall()
             dbc.close()
             return list(map(lambda x: x[0], tracked))
         except Error as e:
@@ -265,7 +267,7 @@ class SubscribableDB(object):
     def track(self, subscribable):
         dbc = sqlite3.connect(self.database_file)
         try:
-            dbc.execute('INSERT INTO {} (name) VALUES (?)'.format(self.database_table_subscribable), (subscribable,))
+            dbc.execute('INSERT INTO {} (name, subscribable_type) VALUES (?, ?)'.format(self.database_table_subscribable), (subscribable, self.subscribable_type))
         except Error as e:
             print(e)
         dbc.commit()
@@ -274,7 +276,7 @@ class SubscribableDB(object):
     def untrack(sefl, subscribable):
         dbc = sqlite3.connect(self.database_file)
         try:
-            dbc.execute('DELETE FROM {} WHERE name=? LIMIT 1'.format(self.database_table_subscribable), (subscribable,))
+            dbc.execute('DELETE FROM {} WHERE name=? AND subscribable_type=? LIMIT 1'.format(self.database_table_subscribable), (subscribable, self.subscribable_type))
         except Error as e:
             print(e)
         dbc.commit()
@@ -283,7 +285,7 @@ class SubscribableDB(object):
     def insert(self, subscribable):
         dbc = sqlite3.connect(self.database_file)
         try:
-            dbc.execute('INSERT INTO {} (name, subscribers) VALUES (?, ?)'.format(self.database_table_subscribable_subscribers), (subscribable.name, subscribable.subscribers))
+            dbc.execute('INSERT INTO {} (name, subscribable_type, subscribers) VALUES (?, ?, ?)'.format(self.database_table_subscribable_subscribers), (subscribable.name, self.subscribable_type, subscribable.subscribers))
         except Error as e:
             print(e)
         dbc.commit()
@@ -293,7 +295,7 @@ class SubscribableDB(object):
         dbc = sqlite3.connect(self.database_file)
         for subscribable in subscribables:
             try:
-                dbc.execute('INSERT INTO {} (name, subscribers) VALUES (?, ?)'.format(self.database_table_subscribable_subscribers), (subscribable.name, subscribable.subscribers))
+                dbc.execute('INSERT INTO {} (name, subscribable_type, subscribers) VALUES (?, ?, ?)'.format(self.database_table_subscribable_subscribers), (subscribable.name, self.subscribable_type, subscribable.subscribers))
             except Error as e:
                 print(e)
         dbc.commit()
@@ -301,23 +303,28 @@ class SubscribableDB(object):
 
     def get_subscribers(self, subscribable):
         dbc = sqlite3.connect(self.database_file)
-        now = c.execute(
-            'SELECT * FROM {} WHERE subscribable=? ORDER BY timestamp DESC'.format(table_subscribers_name), (sr,)
+        now = dbc.execute(
+            'SELECT subscribers FROM {} WHERE name=? AND subscribable_type=? ORDER BY timestamp DESC'
+            .format(self.database_table_subscribable_subscribers), (subscribable, self.subscribable_type)
         ).fetchone()
-        today = c.execute(
-            'SELECT * FROM {} WHERE timestamp BETWEEN datetime("now", "start of day") AND datetime("now", "localtime") AND subscribable=? ORDER BY timestamp ASC'.format(table_subscribers_name), (subscribable.name,)
+        today = dbc.execute(
+            'SELECT subscribers FROM {} WHERE timestamp BETWEEN datetime("now", "start of day") AND datetime("now", "localtime") AND name=? AND subscribable_type=? ORDER BY timestamp ASC'
+            .format(self.database_table_subscribable_subscribers), (subscribable, self.subscribable_type)
         ).fetchone()
-        last_week = c.execute(
-            'SELECT * FROM {} WHERE timestamp BETWEEN datetime("now", "-6 days") AND datetime("now", "localtime") AND subscribable=? ORDER BY timestamp ASC'.format(table_subscribers_name), (subscribable.name,)
+        last_week = dbc.execute(
+            'SELECT subscribers FROM {} WHERE timestamp BETWEEN datetime("now", "-6 days") AND datetime("now", "localtime") AND name=? AND subscribable_type=? ORDER BY timestamp ASC'
+            .format(self.database_table_subscribable_subscribers), (subscribable, self.subscribable_type)
         ).fetchone()
-        last_month = c.execute(
-            'SELECT * FROM {} WHERE timestamp BETWEEN datetime("now", "start of month") AND datetime("now", "localtime") AND subscribable=? ORDER BY timestamp ASC'.format(table_subscribers_name), (subscribable.name,)
+        last_month = dbc.execute(
+            'SELECT subscribers FROM {} WHERE timestamp BETWEEN datetime("now", "start of month") AND datetime("now", "localtime") AND name=? AND subscribable_type=? ORDER BY timestamp ASC'
+            .format(self.database_table_subscribable_subscribers), (subscribable, self.subscribable_type)
         ).fetchone()
         dbc.close()
 
         try:
-            return model.PeriodicSummary(subscribable.name, now, today, last_week, last_month)
-        except:
+            return model.PeriodicSummary(subscribable, int(now[0]), int(today[0]), int(last_week[0]), int(last_month[0]))
+        except Error as e:
+            print(e)
             return None
 
 class TwitterDB(SubscribableDB):
@@ -325,7 +332,7 @@ class TwitterDB(SubscribableDB):
         defaults = []
         with open('defaults-twitter.json', 'r') as file:
             defaults = json.load(file)
-        super(TwitterDB, self).__init__('twitter', 'twitter_subscribers', defaults)
+        super(TwitterDB, self).__init__(table_name='twitter', table_subscribers_name='twitter_subscribers', subscribable_type='twitter', defaults=defaults)
 
 
 #
@@ -336,4 +343,4 @@ class RedditDB(SubscribableDB):
         defaults = []
         with open('defaults-reddit.json', 'r') as file:
             defaults = json.load(file)
-        super(RedditDB, self).__init__('reddit', 'reddit_subscribers', defaults)
+        super(RedditDB, self).__init__(table_name='reddit', table_subscribers_name='reddit_subscribers', subscribable_type='reddit', defaults=defaults)
