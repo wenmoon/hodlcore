@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import stringformat
+import datetime
 
 
 class MarketCapitalization(object):
@@ -146,3 +147,15 @@ class OAuthCredentials(object):
         self.consumer_secret = json['consumer_secret']
         self.access_token = json['access_token']
         self.access_token_secret = json['access_token_secret']
+
+
+class Event(object):
+    def __init__(self, title, start, end):
+        self.title = title
+        self.start = start
+        self.end = end        
+        self.when = self.start - datetime.datetime.now()
+        self.finished = True if datetime.datetime.now() > self.end else False
+        self.ongoing = True if self.when.days < 0 else False
+        self.today = True if self.when.days == 0 else False
+        self.upcoming = True if self.when.days > 0 else False

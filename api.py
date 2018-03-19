@@ -184,46 +184,30 @@ def get_ico_text(token_id):
 
     if entr:
         text = '*ICO Information for {}{}:*\n'.format(token_id, stringformat.emoji('charts'))
-        text += '\n'.join(entr) + '\n'
+        text += '\n{}\n'.format(entr)
         if price_list:
-            text += '    *Token Price List:*\n' + '\n'.join(price_list) + '\n'
+            text += '    *Token Price List:*\n{}\n'.format(price_list)
         if returns:
-            text += '\n'.join(returns)
+            text += '\n{}'.format(returns)
 
         return text
     else:
         return None
 
 
-def get_airdrops_text():
+def get_airdrops():
     airdrop_response = requests.get(__endpoint_airdrop)
-
-    soup = BeautifulSoup(airdrop_response.text, 'lxml')
-    events = soup.find_all('div', 'addeventatc')
+    events = BeautifulSoup(airdrop_response.text, 'lxml').find_all('div', 'addeventatc')
     now = datetime.datetime.now()
-    i = 1
+    airdrops = []
     for e in events:
-        airdrop = {
-            'start': e.find('span', 'start').text,
-            'end': e.find('span', 'end').text,
-            'title': e.find('span', 'title').text
-        }
-        airdrop_start = datetime.datetime.strptime(airdrop['start'][:10], '%m/%d/%Y')
-        when = airdrop_start - now
-
-        if when.days == 0:
-            text += "%s%s. *%s* (*today*)\n" % (" "*4, i, airdrop['title'])
-        elif when.days < 0:
-            text += "%s%s. *%s* (*ongoing*)\n" % (" "*4, i, airdrop['title'])
-        else:
-            text += "%s%s. *%s* (in *%s days*)\n" % (" "*4, i, airdrop['title'], when.days)
-
-        if i >= 20:
-            break
-        i += 1
-
-    if i > 1:
-        text += "\nVisit %s for details." % url
-        return text
-    else:
-        return None
+        try:
+            start = datetime.datetime.strptime(e.find('span', 'start').text[:10], '%m/%d/%Y')
+            end = datetime.datetime.strptime(e.find('span', 'end').text[:10], '%m/%d/%Y')
+            title = e.find('span', 'title').text
+            airdrop = model.Event(title, start, end)
+            airdrops.append(airdrop)
+        except Exception as e:
+            print(e)
+            pass
+    return airdrops

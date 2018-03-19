@@ -124,3 +124,25 @@ def token_compared_summary(token, other_token):
     s += '\t*{} has {:.2f}x  the 24h volume of {}.*\n\n'.format(other_token.name, vol_factor, token.name)
     s += '\t*If {} had the cap of {}, the USD price would be: ${} ({:.1f}x)*'.format(token.name, other_token.name, mcap_price, mcap)
     return s
+
+
+def airdrop_summary(airdrop):
+    if airdrop.today:
+        return "\t{}. *{}* (*today*)\n".format(i, airdrop.title)
+    elif airdrop.ongoing:
+        return "\t{}. *{}* (*ongoing*)\n".format(i, airdrop.title)
+    elif airdrop.finished:
+        return "\t{}. *{}* (*finished*)\n".format(i, airdrop.title)
+    else:
+        return "\t{}. *{}* (*in {} days*)\n".format(i, airdrop.title, airdrop.when.days)
+
+
+def airdrops_summary(airdrops, limit = 20):
+    text = "*Upcoming Airdrops{}:*\n".format(emoji('squirt'))
+    i = 1
+    for airdrop in airdrops:
+        text += airdrop_summary(airdrop)
+        if i >= limit:
+            break
+        i += 1
+    return text
