@@ -13,11 +13,11 @@ import model
 class MarketCapitalizationDB(object):
     def __init__(self):
         self.database_file = 'data/hodl.db'
-        self.database_table_cmc_data = 'coinmarketcap_data'
+        self.database_table_cmc_global = 'coinmarketcap_global'
 
         dbc = sqlite3.connect(self.database_file)
         try:
-            dbc.execute('SELECT * FROM {} LIMIT 1').format(self.database_table_cmc_data)
+            dbc.execute('SELECT * FROM {} LIMIT 1').format(self.database_table_cmc_global)
         except sqlite3.OperationalError:
             self.create_tables(dbc)
         dbc.close()
@@ -28,7 +28,7 @@ class MarketCapitalizationDB(object):
                         (timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
                          mcap TEXT,
                          volume REAL,
-                         bitcoin_percentage_of_market_cap REAL)'''.format(self.database_table_cmc_data))
+                         bitcoin_percentage_of_market_cap REAL)'''.format(self.database_table_cmc_global))
             dbc.commit()
         except Error as e:
             print(e)
@@ -38,7 +38,7 @@ class MarketCapitalizationDB(object):
         try:
             dbc.execute('''INSERT INTO {}
                 (mcap, volume, bitcoin_percentage_of_market_cap)
-                 VALUES (?, ?, ?)'''.format(self.database_table_cmc_data), (
+                 VALUES (?, ?, ?)'''.format(self.database_table_cmc_global), (
                     mcap.mcap_usd,
                     mcap.volume_usd_24h,
                     mcap.bitcoin_percentage_of_market_cap))
@@ -51,7 +51,7 @@ class MarketCapitalizationDB(object):
         dbc = sqlite3.connect(self.database_file)
         dbc.row_factory = sqlite3.Row
         try:
-            latest = dbc.execute('SELECT mcap, volume, bitcoin_percentage_of_market_cap FROM {} ORDER BY timestamp DESC LIMIT 1'.format(self.database_table_cmc_data)).fetchone()
+            latest = dbc.execute('SELECT mcap, volume, bitcoin_percentage_of_market_cap FROM {} ORDER BY timestamp DESC LIMIT 1'.format(self.database_table_cmc_global)).fetchone()
             return model.MarketCapitalization(float(latest[0]), float(latest[1]), float(latest[2]))
         except Error as e:
             print(e)
@@ -145,6 +145,7 @@ class TokenDB(object):
                 'month_avg': sum([x[0] for x in volume_month]) / len(volume_month)
             }
         except TypeError:
+            print('get_volumes({}) Error: {}'.format(token_id, e))
             return None
         return ret
 
@@ -185,53 +186,37 @@ class TokenDB(object):
                 'is_atl': now[0] >= atl[0]
             }
         except TypeError:
+            print('get_ranks({}) Error: {}'.format(token_id, e))
             return None
         return ret
 
-    def get_prices_btc(self, token_id):
+    def __get_metric_summary(self, metric_name, token_id):
         dbc = sqlite3.connect(self.database_file)
         now = dbc.execute(
-            'SELECT price_btc FROM {} WHERE id=? ORDER BY timestamp DESC'.format(self.database_table_cmc_tokens), (token_id,)
+            'SELECT {metric} FROM {table} WHERE id=? ORDER BY timestamp DESC'.format(table=self.database_table_cmc_tokens, metric=metric_name), (token_id,)
         ).fetchone()
         today = dbc.execute(
-            'SELECT price_btc FROM {} WHERE timestamp BETWEEN datetime("now", "start of day") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC'.format(self.database_table_cmc_tokens), (token_id,)
+            'SELECT {metric} FROM {table} WHERE timestamp BETWEEN datetime("now", "start of day") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC'.format(table=self.database_table_cmc_tokens, metric=metric_name), (token_id,)
         ).fetchone()
         last_week = dbc.execute(
-            'SELECT price_btc FROM {} WHERE timestamp BETWEEN datetime("now", "-6 days") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC'.format(self.database_table_cmc_tokens), (token_id,)
+            'SELECT {metric} FROM {table} WHERE timestamp BETWEEN datetime("now", "-6 days") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC'.format(table=self.database_table_cmc_tokens, metric=metric_name), (token_id,)
         ).fetchone()
         last_month = dbc.execute(
-            'SELECT price_btc FROM {} WHERE timestamp BETWEEN datetime("now", "start of month") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC'.format(self.database_table_cmc_tokens), (token_id,)
+            'SELECT {metric} FROM {table} WHERE timestamp BETWEEN datetime("now", "start of month") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC'.format(table=self.database_table_cmc_tokens, metric=metric_name), (token_id,)
         ).fetchone()
         dbc.close()
 
         try:
             return model.PeriodicSummary(token_id, now[0], today[0], last_week[0], last_month[0])
-        except Error as e:
-            print(e)
+        except TypeError as e:
+            print('_get_metric_summary({}, {}) Error: {}'.format(metric_name, token_id, e))
             return None
 
+    def get_prices_btc(self, token_id):
+        return self.__get_metric_summary('price_btc', token_id)
 
     def get_mcaps(self, token_id):
-        dbc = sqlite3.connect(self.database_file)
-        now = dbc.execute(
-            'SELECT market_cap_usd FROM {} WHERE id=? ORDER BY timestamp DESC'.format(self.database_table_cmc_tokens), (token_id,)
-        ).fetchone()
-        today = dbc.execute(
-            'SELECT market_cap_usd FROM {} WHERE timestamp BETWEEN datetime("now", "start of day") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC'.format(self.database_table_cmc_tokens), (token_id,)
-        ).fetchone()
-        last_week = dbc.execute(
-            'SELECT market_cap_usd FROM {} WHERE timestamp BETWEEN datetime("now", "-6 days") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC'.format(self.database_table_cmc_tokens), (token_id,)
-        ).fetchone()
-        last_month = dbc.execute(
-            'SELECT market_cap_usd FROM {} WHERE timestamp BETWEEN datetime("now", "start of month") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC'.format(self.database_table_cmc_tokens), (token_id,)
-        ).fetchone()
-        dbc.close()
-
-        try:
-            return model.PeriodicSummary(token_id, now[0], today[0], last_week[0], last_month[0])
-        except:
-            return None
-
+        return self.__get_metric_summary('market_cap_usd', token_id)
 
 #
 # Database operations relating to Subscribables, typically Reddit, Twitter, etc where subscribers (and the change thereof) is an interesting metric
@@ -336,9 +321,9 @@ class SubscribableDB(object):
         dbc.close()
 
         try:
-            return model.PeriodicSummary(subscribable, int(now[0]), int(today[0]), int(last_week[0]), int(last_month[0]))
-        except Error as e:
-            print(e)
+            return model.PeriodicSummary(subscribable, now[0], today[0], last_week[0], last_month[0])
+        except TypeError as e:
+            print('{} get_subscribers({}) Error: {}'.format(self.subscribable_type, subscribable, e))
             return None
 
 
