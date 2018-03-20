@@ -14,6 +14,10 @@ class MarketCapitalization(object):
     def from_json(cls, json):
         return cls(json['total_market_cap_usd'], json['total_24h_volume_usd'], json['bitcoin_percentage_of_market_cap'])
 
+    def __str__(self):
+        return 'Mcap: {}, 24h vol: {}, BTC: {}'.format(self.mcap, self.volume_usd_24h, self.bitcoin_percentage_of_market_cap)
+
+
 class Token(object):
     def __init__(self, id, name, symbol, rank, price, price_btc, percent_change_1h, percent_change_24h, percent_change_7d, volume_24h, mcap, available_supply, total_supply, max_supply, balance = 0, currency = 'usd'):
         self.id = id
@@ -83,8 +87,8 @@ class Token(object):
             return None
 
     def matches(self, search):
-    	search_ci = search.lower()
-    	if search_ci in self.id.lower() or search_ci in self.symbol.lower() or search_ci in self.name.lower():
+    	search = search.lower()
+    	if search in self.id.lower() or search in self.symbol.lower() or search in self.name.lower():
             return True
         return False
 
@@ -95,7 +99,7 @@ class Token(object):
     def is_bitcoin(self):
         return self.symbol.lower() == 'btc'
 
-    def __str__():
+    def __str__(self):
         return self.name_str
 
     
@@ -114,9 +118,6 @@ class Portfolio(object):
         self.tokens.remove(token)
         self.value -= token.value
         self.value_btc -= token.value_btc
-
-    def __str__():
-        return self.name_str
 
 
 class Subscribable(object):

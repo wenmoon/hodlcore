@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import math
+from operator import attrgetter
 
 __emojis = {
     'poop':             u'\U0001f4a9',
@@ -96,7 +97,7 @@ def token_summary(token, btc_summary = None):
     s += '\t\t24h: {}\n'.format(percent(token.percent_change_24h, emo=True))
     s += '\t\t 7d: {}```'.format(percent(token.percent_change_7d, emo=True))
     if btc_summary is not None:
-        s += '\t*Change (BTC)*:\n'
+        s += '\n\t*Change (BTC)*:\n'
         s += '```\t\t24h: {}\n'.format(percent(btc_summary.pct_today, emo=True))
         s += '\t\t 7d: {}\n'.format(percent(btc_summary.pct_week, emo=True))
         s += '\t\t30d: {}```'.format(percent(btc_summary.pct_month, emo=True))
@@ -128,21 +129,17 @@ def token_compared_summary(token, other_token):
 
 def airdrop_summary(airdrop):
     if airdrop.today:
-        return "\t{}. *{}* (*today*)\n".format(i, airdrop.title)
+        return "\t- *{}* (*today*)\n".format(airdrop.title)
     elif airdrop.ongoing:
-        return "\t{}. *{}* (*ongoing*)\n".format(i, airdrop.title)
+        return "\t- *{}* (*ongoing*)\n".format(airdrop.title)
     elif airdrop.finished:
-        return "\t{}. *{}* (*finished*)\n".format(i, airdrop.title)
+        return "\t- *{}* (*finished*)\n".format(airdrop.title)
     else:
-        return "\t{}. *{}* (*in {} days*)\n".format(i, airdrop.title, airdrop.when.days)
+        return "\t- *{}* (*in {} days*)\n".format(airdrop.title, airdrop.when.days)
 
 
 def airdrops_summary(airdrops, limit = 20):
     text = "*Upcoming Airdrops{}:*\n".format(emoji('squirt'))
-    i = 1
-    for airdrop in airdrops:
+    for airdrop in sorted(airdrops, key=attrgetter('when.days'), reverse=False)[:limit]:
         text += airdrop_summary(airdrop)
-        if i >= limit:
-            break
-        i += 1
     return text

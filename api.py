@@ -128,70 +128,59 @@ def get_twitter(twitter, credentials):
         return None
 
 
-def get_ico_text(token_id):
-    token = search_token(token_id)
-    ico_response = requests.get(__endpoint_ico.format(token.id.lower()), headers=__headers_mozilla)
-
-    soup = BeautifulSoup(ico_response.text, 'lxml')
-    rel_sections = soup.find_all('div', 'white-desk ico-desk')
-    fields = [
-        'ticker:',
-        'ico token price:',
-        'total tokens:',
-        'accepts:',
-    ]
-    entr = []
-    for s in rel_sections:
-        if not s.find_all('i', 'fa fa-calendar'):
-            continue
-
-        ico_info = s.find('div', 'col-12 col-md-6')
-        lines = s.find_all('li')
-        for line in lines:
-            relevant = False
-            for f in fields:
-                if f in line.text.lower():
-                    relevant = True
-            if relevant:
-                header, value = line.text.split(':')
-                line = '*%s*: %s' % (header, value)
-                indent = 4 * " "
-                entr.append(indent+line)
-
-    # These sections are not always present
+def get_ico_text(token):
     try:
-        prices = soup.find('div', 'token-price-list').find_all('li')
-        roi = soup.find('div', 'col-12 col-md-6 ico-roi').find_all('li')
+        ico_response = requests.get(__endpoint_ico.format(token.id.lower()), headers=__headers_mozilla)
+        soup = BeautifulSoup(ico_response.text, 'lxml')
+        rel_sections = soup.find_all('div', 'white-desk ico-desk')
+        fields = [
+            'ticker:',
+            'ico token price:',
+            'total tokens:',
+            'accepts:',
+        ]
+        entries = []
+        for s in rel_sections:
+            if not s.find_all('i', 'fa fa-calendar'):
+                continue
 
-        # Price list
-        price_list = []
-        for l in prices:
-            indent = 8 * " "
-            price_list.append(indent+l.text)
+            # ICO details
+            ico_info = s.find('div', 'col-12 col-md-6')
+            lines = s.find_all('li')
+            for line in lines:
+                for field in fields:
+                    if field in line.text.lower():
+                        header, value = line.text.encode('utf-8').split(':')
+                        entries.append('\t*{}*: {}\n'.format(header, value))
 
-        # Returns on investment
-        returns = []
-        for l in roi:
-            amount = l.find('div', 'roi-amount')
-            currency = l.find('div', 'roi-currency')
-            indent = 4 * " "
-            returns.append(indent+'*Returns %s*: %s' % (currency.text, amount.text))
-    except AttributeError:
-        prices = None
-        roi = None
-        price_list = []
-        returns = []
+            # Price lists
+            prices = soup.find('div', 'token-price-list').find_all('li')
+            price_list = []
+            for price in prices:
+                price_list.append('\t\t{}\n'.format(price.text.encode('utf-8')))
 
-    if entr:
-        text = '*ICO Information for {}{}:*\n'.format(token_id, stringformat.emoji('charts'))
-        text += '\n{}\n'.format(entr)
-        if price_list:
-            text += '    *Token Price List:*\n{}\n'.format(price_list)
-        if returns:
-            text += '\n{}'.format(returns)
+            # ROIs
+            rois = soup.find('div', 'col-12 col-md-6 ico-roi').find_all('li')
+            roi_list = []
+            for roi in rois:
+                amount = roi.find('div', 'roi-amount').text.encode('utf-8')
+                currency = roi.find('div', 'roi-currency').text.encode('utf-8')
+                roi_list.append('\t*Returns {}*: {}'.format(currency, amount))
 
-        return text
-    else:
+        if entries:
+            text = '*ICO Information for {}{}:*\n'.format(token.name_str, stringformat.emoji('charts'))
+            text += '{}\n'.format(entries)
+            if price_list:
+                text += '\t*Token Price List:*\n{}\n'.format(price_list)
+            if roi_list:
+                text += '\n{}'.format(roi_list)
+
+            return text
+        else:
+            return None
+    except Exception as e:
+        print(token)
+        print(e)
         return None
 
 
