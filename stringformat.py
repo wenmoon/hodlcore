@@ -62,16 +62,17 @@ def sh_color(n):
 
 
 def percent(num, emo=True):
-    ret = '{:.2f}%'.format(num)
-    if emo:
+    if not emo:        
+        return '{}{:.2f}%'.format('+' if num > 0 else '', num)
+    else:
         if num > 0:
             prefix = '{} +'.format(emoji('green_heart'))
         elif num == 0:
             prefix = '{}  '.format(emoji('orange_diamond'))
         else:
             prefix = '{} '.format(emoji('broken_heart'))
-        ret = '{}{}'.format(prefix, ret)
-    return ret
+        return '{}{:.2f}%'.format(prefix, num)
+
 
 def mcap_summary(mcap):
     s = '*Global data {}:*\n'.format(emoji('charts'))
