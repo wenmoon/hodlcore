@@ -321,7 +321,7 @@ class SubscribableDB(object):
         dbc.close()
 
         try:
-            return model.PeriodicSummary(subscribable, now[0], today[0], last_week[0], last_month[0])
+            return model.PeriodicSummary(subscribable, float(now[0]), float(today[0]), float(last_week[0]), float(last_month[0]))
         except TypeError as e:
             print('{} get_subscribers({}) Error: {}'.format(self.subscribable_type, subscribable, e))
             return None

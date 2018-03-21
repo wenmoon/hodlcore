@@ -130,16 +130,21 @@ class Subscribable(object):
 class PeriodicSummary(object):
     def __init__(self, name, now, today, last_week, last_month):
         self.name = name
-        self.now = now
+        self.now = float(now)
+        self.last_week = float(last_week)
+        self.last_month = float(last_month)
+
         self.diff_today = now - today
-        self.pct_today = 0 if today == 0 else ((now / today) - 1) * 100
+        self.pct_today = 0 if today == 0 else ((now / float(today)) - 1.0) * 100.0
+
         self.diff_week = now - last_week
-        self.pct_week =  0 if last_week == 0 else ((now / last_week) - 1) * 100
+        self.pct_week =  0 if last_week == 0 else ((now / float(last_week)) - 1.0) * 100.0
+
         self.diff_month = now - last_month
-        self.pct_month = 0 if last_month == 0 else ((now / last_month) - 1) * 100
+        self.pct_month = 0 if last_month == 0 else ((now / float(last_month)) - 1.0) * 100.0
 
     def __str__(self):
-        return 'PeriodicSummary:\n\tName: {}\n\tDiff (d, w, m): {}, {}, {}\n\tPercent (d, w, m): {}, {}, {}'.format(self.name, self.diff_today, self.diff_week, self.diff_month, stringformat.percent(self.pct_today), stringformat.percent(self.pct_week), stringformat.percent(self.pct_month))
+        return 'PeriodicSummary:\n\tName: {}\n\tNumbers (n, lw, lm): {}, {}, {}\n\tDiff (d, w, m): {}, {}, {}\n\tPercent (d, w, m): {}, {}, {}'.format(self.name, self.now, self.last_week, self.last_month, self.diff_today, self.diff_week, self.diff_month, stringformat.percent(self.pct_today), stringformat.percent(self.pct_week), stringformat.percent(self.pct_month))
 
 
 class OAuthCredentials(object):
