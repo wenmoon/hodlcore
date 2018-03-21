@@ -81,7 +81,7 @@ class Token(object):
             max_supply = float(json['total_supply'])
             return cls(
                 tid, name, symbol, rank, price, price_btc, percent_change_1h, percent_change_24h, percent_change_7d, 
-                volume_24h, mcap, available_supply, total_supply, max_supply
+                volume_24h, mcap, available_supply, total_supply, max_supply, balance, currency
             )
         except Exception as e:
             return None

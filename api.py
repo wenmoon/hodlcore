@@ -39,7 +39,7 @@ def get_mcap():
     return model.MarketCapitalization.from_json(mcap_json)
 
 
-def get_token(name, balance = 0 , currency = 'usd'):
+def get_token(name, balance = 0, currency = 'usd'):
     try:
         r_token = requests.get(__endpoint_token.format(name, currency)).json()[0]
         return model.Token.from_json(r_token, balance, currency)
