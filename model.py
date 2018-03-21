@@ -109,7 +109,7 @@ class Portfolio(object):
         self.value = 0
         self.value_btc = 0
 
-    def add_tokens(self, token):
+    def add_token(self, token):
         self.tokens.append(token)
         self.value += token.value
         self.value_btc += token.value_btc

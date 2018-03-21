@@ -29,7 +29,8 @@ def get_portfolio(portfolio_config, currency):
     portfolio = model.Portfolio()
     for item in portfolio_config:
         token = get_token(item[0], item[1], currency)
-        portfolio.add_token(token)
+        if token is not None:
+            portfolio.add_token(token)
     return portfolio
 
 
@@ -41,7 +42,7 @@ def get_mcap():
 def get_token(name, balance = 0 , currency = 'usd'):
     try:
         r_token = requests.get(__endpoint_token.format(name, currency)).json()[0]
-        return model.Token(r_token, balance, currency)
+        return model.Token.from_json(r_token, balance, currency)
     except:
         return None
 
