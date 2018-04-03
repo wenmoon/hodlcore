@@ -10,7 +10,7 @@ class MarketCapitalization(object):
         self.volume_usd_24h = volume_usd_24h
         self.bitcoin_percentage_of_market_cap = bitcoin_percentage_of_market_cap
 
-    @classmethod 
+    @classmethod
     def from_json(cls, json):
         return cls(json['total_market_cap_usd'], json['total_24h_volume_usd'], json['bitcoin_percentage_of_market_cap'])
 
@@ -65,7 +65,7 @@ class Token(object):
     @classmethod
     def from_json(cls, json, balance = 0, currency = 'usd'):
         try:
-            tid = json['id']
+            token_id = json['id']
             name = json['name']
             symbol = json['symbol']
             rank = int(json['rank'])
@@ -80,8 +80,8 @@ class Token(object):
             total_supply = float(json['total_supply'])
             max_supply = float(json['total_supply'])
             return cls(
-                tid, name, symbol, rank, price, price_btc, percent_change_1h, percent_change_24h, percent_change_7d, 
-                volume_24h, mcap, available_supply, total_supply, max_supply, balance, currency
+                token_id, name, symbol, rank, price, price_btc, percent_change_1h, percent_change_24h, percent_change_7d,
+                volume_24h, mcap, available_supply, total_supply, max_supply
             )
         except Exception as e:
             return None
@@ -122,7 +122,7 @@ class Token(object):
     def __str__(self):
         return self.name_str
 
-    
+
 class Portfolio(object):
     def __init__(self):
         self.tokens = []
@@ -168,18 +168,29 @@ class PeriodicSummary(object):
 
 
 class OAuthCredentials(object):
-    def __init__(self, json):
-        self.consumer_key = json['consumer_key']
-        self.consumer_secret = json['consumer_secret']
-        self.access_token = json['access_token']
-        self.access_token_secret = json['access_token_secret']
+    def __init__(self, consumer_key, consumer_secret, access_token, access_token_secret):
+        self.consumer_key = consumer_key
+        self.consumer_secret = consumer_secret
+        self.access_token = access_token
+        self.access_token_secret = access_token_secret
+
+    @classmethod
+    def from_json(cls, json):
+        try:
+            consumer_key = json['consumer_key']
+            consumer_secret = json['consumer_secret']
+            access_token = json['access_token']
+            access_token_secret = json['access_token_secret']
+            return cls(consumer_key, consumer_secret, access_token, access_token_secret)
+        except Exception:
+            return None
 
 
 class Event(object):
     def __init__(self, title, start, end):
         self.title = title
         self.start = start
-        self.end = end        
+        self.end = end
         self.when = self.start - datetime.datetime.now()
         self.finished = True if datetime.datetime.now() > self.end else False
         self.ongoing = True if self.when.days < 0 else False
