@@ -8,7 +8,6 @@ import datetime
 
 import stringformat
 
-__endpoint_tokens_all = 'https://api.coinmarketcap.com/v1/ticker/?limit=10000'
 __endpoint_tokens_limit = 'https://api.coinmarketcap.com/v1/ticker/?limit={}'
 __endpoint_token_scrape = 'https://coinmarketcap.com/currencies/{}'
 __endpoint_token_scrape_social = 'https://coinmarketcap.com/currencies/{}/#social'
@@ -59,7 +58,7 @@ def get_top_tokens(limit = 100):
 
 
 def search_tokens(search, limit = 100):
-    r_tokens = requests.get(__endpoint_tokens_all).json()
+    r_tokens = requests.get(__endpoint_tokens_limit.format(1000)).json()
     tokens = []
     for r_token in r_tokens:
         try:
@@ -74,10 +73,21 @@ def search_tokens(search, limit = 100):
 
 
 def search_token(search):
-    try:
-        return search_tokens(search, limit=1)[0]
-    except:
-        return None
+    r_tokens = requests.get(__endpoint_tokens_limit.format(1000)).json()
+    match_token = None
+    match_token_score = 0
+    for r_token in r_tokens:
+        try:
+            token = model.Token.from_json(r_token)
+            token_score = token.matches_score(search)
+            if token_score > 0:
+                print('Search score for {} = {}'.format(token.name_str, token_score))
+            if token_score > match_token_score:
+                match_token = token
+                match_token_score = token_score
+        except:
+            pass
+    return match_token
 
 
 def get_top_subreddits(limit = 300):

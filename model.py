@@ -92,6 +92,26 @@ class Token(object):
             return True
         return False
 
+    def matches_score(self, search):
+        score = 0
+        search = search.lower()
+        if search == self.id.lower():
+            score += 10
+        elif search in self.id.lower():
+            score += 3
+
+        if search == self.symbol.lower():
+            score += 10
+        elif search in self.symbol.lower():
+            score += 3
+
+        if search == self.name.lower():
+            score += 10
+        elif search in self.name.lower():
+            score += 3
+
+        return score
+
     @staticmethod
     def is_bitcoin(token_id):
         return token_id.lower() == 'btc'

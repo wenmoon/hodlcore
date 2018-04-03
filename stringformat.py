@@ -41,7 +41,10 @@ def emoji(key):
 
 def large_number(n, short=False):
     """ Return human readable large numbers. """
-    millnames = ['','k','Million','Billion','trillion']
+    if short:
+        millnames = ['','k','m','bn','tn']
+    else:
+        millnames = ['','k','Million','Billion','trillion']
     try:
         n = float(n)
         millidx = max(0, min(len(millnames)-1,
