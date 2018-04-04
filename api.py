@@ -51,7 +51,8 @@ def get_top_tokens(limit = 100):
     tokens = []
     for r_token in r_tokens:
         try:
-            tokens.append(model.Token.from_json(r_token))
+            token = model.Token.from_json(r_token)
+            tokens.append(token)
         except:
             pass
     return tokens
@@ -80,8 +81,8 @@ def search_token(search):
         try:
             token = model.Token.from_json(r_token)
             token_score = token.matches_score(search)
-            if token_score > 0:
-                print('Search score for {} = {}'.format(token.name_str, token_score))
+            # if token_score > 0:
+            #     print('Search score for {} = {}'.format(token.name_str, token_score))
             if token_score > match_token_score:
                 match_token = token
                 match_token_score = token_score

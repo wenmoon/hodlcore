@@ -148,11 +148,20 @@ class Subscribable(object):
 
 
 class PeriodicSummary(object):
-    def __init__(self, name, now, today, last_week, last_month):
+    def __init__(self, name, now, today, yesterday, last_week, last_month, ath, atl, avg_today, avg_last_week, avg_last_month):
         self.name = name
         self.now = float(now)
+        self.today = float(today)
+        self.yesterday = float(yesterday)
         self.last_week = float(last_week)
-        self.last_month = float(last_month)
+        self.last_month = float(last_month)        
+        self.atl = float(atl)
+        self.ath = float(ath)
+        self.is_ath = now >= ath
+        self.is_atl = now <= atl
+        self.avg_today = avg_today
+        self.avg_last_week = avg_last_week
+        self.avg_last_month = avg_last_month
 
         self.diff_today = now - today
         self.pct_today = 0 if today == 0 else ((now / float(today)) - 1.0) * 100.0
@@ -163,8 +172,11 @@ class PeriodicSummary(object):
         self.diff_month = now - last_month
         self.pct_month = 0 if last_month == 0 else ((now / float(last_month)) - 1.0) * 100.0
 
+    def __cmp__(self, other):
+        return cmp(self.diff_today, other.diff_today)
+
     def __str__(self):
-        return 'PeriodicSummary:\n\tName: {}\n\tNumbers (n, lw, lm): {}, {}, {}\n\tDiff (d, w, m): {}, {}, {}\n\tPercent (d, w, m): {}, {}, {}'.format(self.name, self.now, self.last_week, self.last_month, self.diff_today, self.diff_week, self.diff_month, stringformat.percent(self.pct_today), stringformat.percent(self.pct_week), stringformat.percent(self.pct_month))
+        return 'PeriodicSummary:\n\tName: {}\n\tATH: {}, ATL: {}\n\tValues (now, last_week, last_month): {}, {}, {}\n\tDiff (d, w, m): {}, {}, {}\n\tPercent (d, w, m): {}, {}, {}'.format(self.name, self.ath, self.atl, self.now, self.last_week, self.last_month, self.diff_today, self.diff_week, self.diff_month, stringformat.percent(self.pct_today), stringformat.percent(self.pct_week), stringformat.percent(self.pct_month))
 
 
 class OAuthCredentials(object):
