@@ -37,9 +37,15 @@ class Token(object):
 
         self.name_str = '{} ({})'.format(self.name, self.symbol)
         self.balance = balance
-        self.value = self.price * self.balance
-        self.value_btc = self.price_btc * self.balance
         self.url = 'https://coinmarketcap.com/currencies/{}/'.format(self.id)
+
+    @property
+    def value(self):
+        return self.price * self.balance
+
+    @property
+    def value_btc(self):
+        return self.price_btc * self.balance
 
     @classmethod
     def from_db_tuple(cls, db_tuple):
@@ -154,7 +160,7 @@ class PeriodicSummary(object):
         self.today = float(today)
         self.yesterday = float(yesterday)
         self.last_week = float(last_week)
-        self.last_month = float(last_month)        
+        self.last_month = float(last_month)
         self.atl = float(atl)
         self.ath = float(ath)
         self.is_ath = now >= ath

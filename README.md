@@ -2,4 +2,4 @@
 Core functionality for tracking Cyrpto assets.
 
 ## Requirements
-requests ,json, bs4, tweepy, sqlite3
+To install required dependencies, run `pip install -r requirements.txt`.
