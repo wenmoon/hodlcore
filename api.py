@@ -26,9 +26,13 @@ __headers_mozilla = {
 
 def get_portfolio(portfolio_config, currency):
     portfolio = model.Portfolio()
-    for item in portfolio_config:
-        token = get_token(item[0], item[1], currency)
+    for entry in portfolio_config:
+        token = get_token(entry[0])
+        if token is None:
+            token = search_token(entry[0])
         if token is not None:
+            token.balance = entry[1]
+            token.currency = currency
             portfolio.add_token(token)
     return portfolio
 
@@ -38,10 +42,10 @@ def get_mcap():
     return model.MarketCapitalization.from_json(mcap_json)
 
 
-def get_token(name, balance = 0, currency = 'usd'):
+def get_token(name):
     try:
         r_token = requests.get(__endpoint_token.format(name, currency)).json()[0]
-        return model.Token.from_json(r_token, balance, currency)
+        return model.Token.from_json(r_token)
     except:
         return None
 

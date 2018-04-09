@@ -19,7 +19,7 @@ class MarketCapitalization(object):
 
 
 class Token(object):
-    def __init__(self, id, name, symbol, rank, price, price_btc, percent_change_1h, percent_change_24h, percent_change_7d, volume_24h, mcap, available_supply, total_supply, max_supply, balance = 0, currency = 'usd'):
+    def __init__(self, id, name, symbol, rank, price, price_btc, percent_change_1h, percent_change_24h, percent_change_7d, volume_24h, mcap, available_supply, total_supply, max_supply, balance = 0):
         self.id = id
         self.name = name
         self.symbol = symbol
@@ -34,9 +34,8 @@ class Token(object):
         self.available_supply = available_supply
         self.total_supply = total_supply
         self.max_supply = max_supply
-
-        self.name_str = '{} ({})'.format(self.name, self.symbol)
         self.balance = balance
+        self.name_str = '{} ({})'.format(self.name, self.symbol)
         self.url = 'https://coinmarketcap.com/currencies/{}/'.format(self.id)
 
     @property
@@ -209,8 +208,23 @@ class Event(object):
         self.title = title
         self.start = start
         self.end = end
-        self.when = self.start - datetime.datetime.now()
-        self.finished = True if datetime.datetime.now() > self.end else False
-        self.ongoing = True if self.when.days < 0 else False
-        self.today = True if self.when.days == 0 else False
-        self.upcoming = True if self.when.days > 0 else False
+
+    @property
+    def when(self):
+        return self.start - datetime.datetime.now()
+
+    @property
+    def today(self):
+        return self.when.days == 0
+
+    @property
+    def ongoing(self):
+        return self.when.days < 0
+
+    @property
+    def upcoming(self):
+        return self.when.days > 0
+
+    @property
+    def finished(self):
+        return datetime.datetime.now() > self.end
