@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-
-import stringformat
-import datetime
-
-
 class MarketCapitalization(object):
     def __init__(self, mcap_usd, volume_usd_24h, bitcoin_percentage_of_market_cap):
         self.mcap_usd = mcap_usd
@@ -87,8 +81,8 @@ class Token(object):
             return None
 
     def matches(self, search):
-    	search = search.lower()
-    	if search in self.id.lower() or search in self.symbol.lower() or search in self.name.lower():
+        search = search.lower()
+        if search in self.id.lower() or search in self.symbol.lower() or search in self.name.lower():
             return True
         return False
 
