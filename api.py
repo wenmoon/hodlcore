@@ -26,9 +26,13 @@ __headers_mozilla = {
 
 def get_portfolio(portfolio_config, currency):
     portfolio = model.Portfolio()
-    for item in portfolio_config:
-        token = get_token(item[0], item[1], currency)
+    for entry in portfolio_config:
+        token = get_token(entry[0])
+        if token is None:
+            token = search_token(entry[0])
         if token is not None:
+            token.balance = entry[1]
+            token.currency = currency
             portfolio.add_token(token)
     return portfolio
 
@@ -38,10 +42,10 @@ def get_mcap():
     return model.MarketCapitalization.from_json(mcap_json)
 
 
-def get_token(name, balance = 0, currency = 'usd'):
+def get_token(name):
     try:
         r_token = requests.get(__endpoint_token.format(name, currency)).json()[0]
-        return model.Token.from_json(r_token, balance, currency)
+        return model.Token.from_json(r_token)
     except:
         return None
 
@@ -51,7 +55,8 @@ def get_top_tokens(limit = 100):
     tokens = []
     for r_token in r_tokens:
         try:
-            tokens.append(model.Token.from_json(r_token))
+            token = model.Token.from_json(r_token)
+            tokens.append(token)
         except:
             pass
     return tokens
@@ -80,8 +85,8 @@ def search_token(search):
         try:
             token = model.Token.from_json(r_token)
             token_score = token.matches_score(search)
-            if token_score > 0:
-                print('Search score for {} = {}'.format(token.name_str, token_score))
+            # if token_score > 0:
+            #     print('Search score for {} = {}'.format(token.name_str, token_score))
             if token_score > match_token_score:
                 match_token = token
                 match_token_score = token_score

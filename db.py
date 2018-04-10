@@ -113,110 +113,67 @@ class TokenDB(object):
         dbc.commit()
         dbc.close()
 
-    def get_volumes(self, token_id):
-        dbc = sqlite3.connect(self.database_file)
-        last = dbc.execute(
-            'SELECT volume_usd FROM {} WHERE id=? ORDER BY timestamp DESC LIMIT 1'.format(self.database_table_cmc_tokens), (token_id,)
-        ).fetchone()
-
-        a_day_ago = dbc.execute(
-            'SELECT volume_usd FROM {} WHERE timestamp BETWEEN datetime("now", "-1 days") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC LIMIT 1'.format(self.database_table_cmc_tokens), (token_id,)
-        ).fetchone()
-
-        volume_day = dbc.execute(
-            'SELECT volume_usd FROM {} WHERE timestamp BETWEEN datetime("now", "start of day") AND datetime("now", "localtime") AND id=?'.format(self.database_table_cmc_tokens), (token_id,)
-        ).fetchall()
-
-        volume_week = dbc.execute(
-            'SELECT volume_usd FROM {} WHERE timestamp BETWEEN datetime("now", "-6 days") AND datetime("now", "localtime") AND id=?'.format(self.database_table_cmc_tokens), (token_id,)
-        ).fetchall()
-        volume_month = dbc.execute(
-            'SELECT volume_usd FROM {} WHERE timestamp BETWEEN datetime("now", "start of month") AND datetime("now", "localtime") AND id=?'.format(self.database_table_cmc_tokens), (token_id,)
-        ).fetchall()
-        dbc.close()
-
-        # Todo, use namedtuple?
-        try:
-            ret = {
-                'last': last[0],
-                'yesterday': a_day_ago[0],
-                'day_avg': sum([x[0] for x in volume_day]) / len(volume_day),
-                'week_avg': sum([x[0] for x in volume_week]) / len(volume_week),
-                'month_avg': sum([x[0] for x in volume_month]) / len(volume_month)
-            }
-        except TypeError:
-            print('get_volumes({}) Error: {}'.format(token_id, e))
-            return None
-        return ret
-
-    def get_ranks(self, token_id):
-        dbc = sqlite3.connect(self.database_file)
-        _latest = c.execute(
-            'SELECT rank FROM {} WHERE id=? ORDER BY timestamp DESC LIMIT 2', (token,)
-        )
-        now = _latest.fetchone()
-        last = _latest.fetchone()
-        today = dbc.execute(
-            'SELECT rank FROM {} WHERE timestamp BETWEEN datetime("now", "start of day") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC LIMIT 1'.format(self.database_table_cmc_tokens), (token_id,)
-        ).fetchone()
-        last_week = dbc.execute(
-            'SELECT rank FROM {} WHERE timestamp BETWEEN datetime("now", "-6 days") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC LIMIT 1'.format(self.database_table_cmc_tokens), (token_id,)
-        ).fetchone()
-        last_month = dbc.execute(
-            'SELECT rank FROM {} WHERE timestamp BETWEEN datetime("now", "start of month") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC LIMIT 1'.format(self.database_table_cmc_tokens), (token_id,)
-        ).fetchone()
-        ath = dbc.execute(
-            'SELECT rank FROM {} WHERE id=? ORDER BY rank ASC LIMIT 1'.format(self.database_table_cmc_tokens), (token_id,)
-        ).fetchone()
-        atl = dbc.execute(
-            'SELECT rank FROM {} WHERE id=? ORDER BY rank DESC LIMIT 1'.format(self.database_table_cmc_tokens), (token_id,)
-        ).fetchone()
-        dbc.close()
-
-        try:
-            ret = {
-                'now': now[0],
-                'last': last[0],
-                'today': today[0],
-                'last_week': last_week[0],
-                'last_month': last_month[0],
-                'ath': ath[0],
-                'atl': atl[0],
-                'is_ath': now[0] <= ath[0],
-                'is_atl': now[0] >= atl[0]
-            }
-        except TypeError:
-            print('get_ranks({}) Error: {}'.format(token_id, e))
-            return None
-        return ret
 
     def __get_metric_summary(self, metric_name, token_id):
         dbc = sqlite3.connect(self.database_file)
         now = dbc.execute(
-            'SELECT {metric} FROM {table} WHERE id=? ORDER BY timestamp DESC'.format(table=self.database_table_cmc_tokens, metric=metric_name), (token_id,)
+            'SELECT {metric} FROM {table} WHERE id=? ORDER BY timestamp DESC LIMIT 1'.format(table=self.database_table_cmc_tokens, metric=metric_name), (token_id,)
         ).fetchone()
         today = dbc.execute(
-            'SELECT {metric} FROM {table} WHERE timestamp BETWEEN datetime("now", "start of day") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC'.format(table=self.database_table_cmc_tokens, metric=metric_name), (token_id,)
-        ).fetchone()
+            '''SELECT {metric} FROM {table} 
+            WHERE timestamp BETWEEN datetime("now", "start of day") AND datetime("now", "localtime") AND id=? 
+            ORDER BY timestamp ASC'''
+            .format(table=self.database_table_cmc_tokens, metric=metric_name), (token_id,)
+        ).fetchall()
+        yesterday = dbc.execute(
+            '''SELECT {metric} FROM {table} 
+            WHERE timestamp BETWEEN datetime("now", "-1 days") AND datetime("now", "localtime") AND id=? 
+            ORDER BY timestamp ASC'''
+            .format(table=self.database_table_cmc_tokens, metric=metric_name), (token_id,)
+        ).fetchall()
         last_week = dbc.execute(
-            'SELECT {metric} FROM {table} WHERE timestamp BETWEEN datetime("now", "-6 days") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC'.format(table=self.database_table_cmc_tokens, metric=metric_name), (token_id,)
-        ).fetchone()
+            '''SELECT {metric} FROM {table} 
+            WHERE timestamp BETWEEN datetime("now", "-6 days") AND datetime("now", "localtime") AND id=? 
+            ORDER BY timestamp ASC'''
+            .format(table=self.database_table_cmc_tokens, metric=metric_name), (token_id,)
+        ).fetchall()
         last_month = dbc.execute(
-            'SELECT {metric} FROM {table} WHERE timestamp BETWEEN datetime("now", "start of month") AND datetime("now", "localtime") AND id=? ORDER BY timestamp ASC'.format(table=self.database_table_cmc_tokens, metric=metric_name), (token_id,)
+            '''SELECT {metric} FROM {table} 
+            WHERE timestamp BETWEEN datetime("now", "start of month") AND datetime("now", "localtime") AND id=? 
+            ORDER BY timestamp ASC'''
+            .format(table=self.database_table_cmc_tokens, metric=metric_name), (token_id,)
+        ).fetchall()
+        ath = dbc.execute(
+            'SELECT {metric} FROM {table} WHERE id=? ORDER BY {metric} ASC LIMIT 1'
+            .format(table=self.database_table_cmc_tokens, metric=metric_name), (token_id,)
+        ).fetchone()
+        atl = dbc.execute(
+            'SELECT {metric} FROM {table} WHERE id=? ORDER BY {metric} DESC LIMIT 1'
+            .format(table=self.database_table_cmc_tokens, metric=metric_name), (token_id,)
         ).fetchone()
         dbc.close()
 
         try:
-            return model.PeriodicSummary(token_id, now[0], today[0], last_week[0], last_month[0])
-        except TypeError as e:
+            avg_today = sum([x[0] for x in today]) / len(today)
+            avg_last_week = sum([x[0] for x in last_week]) / len(last_week)
+            avg_last_month = sum([x[0] for x in last_month]) / len(last_month)
+            return model.PeriodicSummary(metric_name, now[0], today[0][0], yesterday[0][0], last_week[0][0], last_month[0][0], ath[0], atl[0], avg_today, avg_last_week, avg_last_month)
+        except Exception as e:
             print('_get_metric_summary({}, {}) Error: {}'.format(metric_name, token_id, e))
             return None
+
+    def get_volumes(self, token_id):
+        return self.__get_metric_summary('volume_usd', token_id)
 
     def get_prices_btc(self, token_id):
         return self.__get_metric_summary('price_btc', token_id)
 
     def get_mcaps(self, token_id):
         return self.__get_metric_summary('market_cap_usd', token_id)
+
+    def get_ranks(self, token_id):
+        return self.__get_metric_summary('rank', token_id)
+
 
 #
 # Database operations relating to Subscribables, typically Reddit, Twitter, etc where subscribers (and the change thereof) is an interesting metric
@@ -264,7 +221,9 @@ class SubscribableDB(object):
     def track(self, subscribable):
         dbc = sqlite3.connect(self.database_file)
         try:
-            dbc.execute('INSERT INTO {} (name, subscribable_type) VALUES (?, ?)'.format(self.database_table_subscribable), (subscribable, self.subscribable_type))
+            dbc.execute(
+                'INSERT INTO {} (name, subscribable_type) VALUES (?, ?)'
+                .format(self.database_table_subscribable), (subscribable, self.subscribable_type))
         except sqlite3.IntegrityError:
             pass
         except Error as e:
@@ -301,29 +260,53 @@ class SubscribableDB(object):
         dbc.close()
 
     def get_subscribers(self, subscribable):
+        metric_name = 'subscribers'
         dbc = sqlite3.connect(self.database_file)
         now = dbc.execute(
-            'SELECT subscribers FROM {} WHERE name=? AND subscribable_type=? ORDER BY timestamp DESC'
-            .format(self.database_table_subscribable_subscribers), (subscribable, self.subscribable_type)
+            'SELECT {metric} FROM {table} WHERE name=? AND subscribable_type=? ORDER BY timestamp DESC LIMIT 1'
+            .format(table=self.database_table_subscribable_subscribers, metric=metric_name), (subscribable, self.subscribable_type)
         ).fetchone()
         today = dbc.execute(
-            'SELECT subscribers FROM {} WHERE timestamp BETWEEN datetime("now", "start of day") AND datetime("now", "localtime") AND name=? AND subscribable_type=? ORDER BY timestamp ASC'
-            .format(self.database_table_subscribable_subscribers), (subscribable, self.subscribable_type)
-        ).fetchone()
+            '''SELECT {metric} FROM {table} 
+            WHERE timestamp BETWEEN datetime("now", "start of day") AND datetime("now", "localtime") AND name=? AND subscribable_type=? 
+            ORDER BY timestamp ASC'''
+            .format(table=self.database_table_subscribable_subscribers, metric=metric_name), (subscribable, self.subscribable_type)
+        ).fetchall()
+        yesterday = dbc.execute(
+            '''SELECT {metric} FROM {table} 
+            WHERE timestamp BETWEEN datetime("now", "-1 days") AND datetime("now", "localtime") AND name=? AND subscribable_type=?
+            ORDER BY timestamp ASC'''
+            .format(table=self.database_table_subscribable_subscribers, metric=metric_name), (subscribable, self.subscribable_type)
+        ).fetchall()
         last_week = dbc.execute(
-            'SELECT subscribers FROM {} WHERE timestamp BETWEEN datetime("now", "-6 days") AND datetime("now", "localtime") AND name=? AND subscribable_type=? ORDER BY timestamp ASC'
-            .format(self.database_table_subscribable_subscribers), (subscribable, self.subscribable_type)
-        ).fetchone()
+            '''SELECT {metric} FROM {table} 
+            WHERE timestamp BETWEEN datetime("now", "-6 days") AND datetime("now", "localtime") AND name=? AND subscribable_type=?
+            ORDER BY timestamp ASC'''
+            .format(table=self.database_table_subscribable_subscribers, metric=metric_name), (subscribable, self.subscribable_type)
+        ).fetchall()
         last_month = dbc.execute(
-            'SELECT subscribers FROM {} WHERE timestamp BETWEEN datetime("now", "start of month") AND datetime("now", "localtime") AND name=? AND subscribable_type=? ORDER BY timestamp ASC'
-            .format(self.database_table_subscribable_subscribers), (subscribable, self.subscribable_type)
+            '''SELECT {metric} FROM {table} 
+            WHERE timestamp BETWEEN datetime("now", "start of month") AND datetime("now", "localtime") AND name=? AND subscribable_type=?
+            ORDER BY timestamp ASC'''
+            .format(table=self.database_table_subscribable_subscribers, metric=metric_name), (subscribable, self.subscribable_type)
+        ).fetchall()
+        ath = dbc.execute(
+            'SELECT {metric} FROM {table} WHERE name=? AND subscribable_type=? ORDER BY {metric} ASC LIMIT 1'
+            .format(table=self.database_table_subscribable_subscribers, metric=metric_name), (subscribable, self.subscribable_type)
+        ).fetchone()
+        atl = dbc.execute(
+            'SELECT {metric} FROM {table} WHERE name=? AND subscribable_type=? ORDER BY {metric} DESC LIMIT 1'
+            .format(table=self.database_table_subscribable_subscribers, metric=metric_name), (subscribable, self.subscribable_type)
         ).fetchone()
         dbc.close()
 
         try:
-            return model.PeriodicSummary(subscribable, float(now[0]), float(today[0]), float(last_week[0]), float(last_month[0]))
-        except TypeError as e:
-            print('{} get_subscribers({}) Error: {}'.format(self.subscribable_type, subscribable, e))
+            avg_today = sum([x[0] for x in today]) / len(today)
+            avg_last_week = sum([x[0] for x in last_week]) / len(last_week)
+            avg_last_month = sum([x[0] for x in last_month]) / len(last_month)
+            return model.PeriodicSummary(metric_name, now[0], today[0][0], yesterday[0][0], last_week[0][0], last_month[0][0], ath[0], atl[0], avg_today, avg_last_week, avg_last_month)
+        except Exception as e:
+            print('get_subscribers({}, {}) Error: {}'.format(subscribable, self.subscribable_type, e))
             return None
 
 

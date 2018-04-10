@@ -19,7 +19,7 @@ class MarketCapitalization(object):
 
 
 class Token(object):
-    def __init__(self, id, name, symbol, rank, price, price_btc, percent_change_1h, percent_change_24h, percent_change_7d, volume_24h, mcap, available_supply, total_supply, max_supply, balance = 0, currency = 'usd'):
+    def __init__(self, id, name, symbol, rank, price, price_btc, percent_change_1h, percent_change_24h, percent_change_7d, volume_24h, mcap, available_supply, total_supply, max_supply, balance = 0):
         self.id = id
         self.name = name
         self.symbol = symbol
@@ -34,12 +34,17 @@ class Token(object):
         self.available_supply = available_supply
         self.total_supply = total_supply
         self.max_supply = max_supply
-
-        self.name_str = '{} ({})'.format(self.name, self.symbol)
         self.balance = balance
-        self.value = self.price * self.balance
-        self.value_btc = self.price_btc * self.balance
+        self.name_str = '{} ({})'.format(self.name, self.symbol)
         self.url = 'https://coinmarketcap.com/currencies/{}/'.format(self.id)
+
+    @property
+    def value(self):
+        return self.price * self.balance
+
+    @property
+    def value_btc(self):
+        return self.price_btc * self.balance
 
     @classmethod
     def from_db_tuple(cls, db_tuple):
@@ -148,11 +153,20 @@ class Subscribable(object):
 
 
 class PeriodicSummary(object):
-    def __init__(self, name, now, today, last_week, last_month):
+    def __init__(self, name, now, today, yesterday, last_week, last_month, ath, atl, avg_today, avg_last_week, avg_last_month):
         self.name = name
         self.now = float(now)
+        self.today = float(today)
+        self.yesterday = float(yesterday)
         self.last_week = float(last_week)
         self.last_month = float(last_month)
+        self.atl = float(atl)
+        self.ath = float(ath)
+        self.is_ath = now >= ath
+        self.is_atl = now <= atl
+        self.avg_today = avg_today
+        self.avg_last_week = avg_last_week
+        self.avg_last_month = avg_last_month
 
         self.diff_today = now - today
         self.pct_today = 0 if today == 0 else ((now / float(today)) - 1.0) * 100.0
@@ -163,8 +177,11 @@ class PeriodicSummary(object):
         self.diff_month = now - last_month
         self.pct_month = 0 if last_month == 0 else ((now / float(last_month)) - 1.0) * 100.0
 
+    def __cmp__(self, other):
+        return cmp(self.diff_today, other.diff_today)
+
     def __str__(self):
-        return 'PeriodicSummary:\n\tName: {}\n\tNumbers (n, lw, lm): {}, {}, {}\n\tDiff (d, w, m): {}, {}, {}\n\tPercent (d, w, m): {}, {}, {}'.format(self.name, self.now, self.last_week, self.last_month, self.diff_today, self.diff_week, self.diff_month, stringformat.percent(self.pct_today), stringformat.percent(self.pct_week), stringformat.percent(self.pct_month))
+        return 'PeriodicSummary:\n\tName: {}\n\tATH: {}, ATL: {}\n\tValues (now, last_week, last_month): {}, {}, {}\n\tDiff (d, w, m): {}, {}, {}\n\tPercent (d, w, m): {}, {}, {}'.format(self.name, self.ath, self.atl, self.now, self.last_week, self.last_month, self.diff_today, self.diff_week, self.diff_month, stringformat.percent(self.pct_today), stringformat.percent(self.pct_week), stringformat.percent(self.pct_month))
 
 
 class OAuthCredentials(object):
@@ -191,8 +208,23 @@ class Event(object):
         self.title = title
         self.start = start
         self.end = end
-        self.when = self.start - datetime.datetime.now()
-        self.finished = True if datetime.datetime.now() > self.end else False
-        self.ongoing = True if self.when.days < 0 else False
-        self.today = True if self.when.days == 0 else False
-        self.upcoming = True if self.when.days > 0 else False
+
+    @property
+    def when(self):
+        return self.start - datetime.datetime.now()
+
+    @property
+    def today(self):
+        return self.when.days == 0
+
+    @property
+    def ongoing(self):
+        return self.when.days < 0
+
+    @property
+    def upcoming(self):
+        return self.when.days > 0
+
+    @property
+    def finished(self):
+        return datetime.datetime.now() > self.end

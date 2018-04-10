@@ -147,3 +147,15 @@ def airdrops_summary(airdrops, limit = 20):
     for airdrop in sorted(airdrops, key=attrgetter('when.days'), reverse=False)[:limit]:
         text += airdrop_summary(airdrop)
     return text
+
+
+def token_ranks_summary(token, ranks):
+    triangle = stringformat.emoji('triangle_up')
+    return '\t-{}*{}* ({}/{}): *{}* ({}, #{})\n'.format(triangle, -ranks.diff_today, -ranks.diff_week, -ranks.diff_month, token.name, token.symbol, ranks.now)
+
+def tokens_ranks_summary(token_ranks):
+    text = '*CoinMarketCap rank climbers (w/m):*\n'
+    for (token, ranks) in token_ranks:
+        text += token_ranks_summary(token, ranks)
+    text += '\nShowing All Time High ranks only {}'.format(stringformat.emoji('fire'))
+    return text
