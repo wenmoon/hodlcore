@@ -1,12 +1,3 @@
-#!/usr/bin/env python
-
-import time
-import sqlite3
-from sqlite3 import Error
-import json
-
-import model
-
 #
 # Database operations relating to Market Capitalization
 #
@@ -315,10 +306,7 @@ class SubscribableDB(object):
 #
 class TwitterDB(SubscribableDB):
     def __init__(self):
-        defaults = []
-        with open('defaults-twitter.json', 'r') as file:
-            defaults = json.load(file)
-        super(TwitterDB, self).__init__(table_name='twitter', table_subscribers_name='twitter_subscribers', subscribable_type='twitter', defaults=defaults)
+        super(TwitterDB, self).__init__(table_name='twitter', table_subscribers_name='twitter_subscribers', subscribable_type='twitter')
 
 
 #
@@ -326,7 +314,4 @@ class TwitterDB(SubscribableDB):
 #
 class RedditDB(SubscribableDB):
     def __init__(self):
-        defaults = []
-        with open('defaults-reddit.json', 'r') as file:
-            defaults = json.load(file)
-        super(RedditDB, self).__init__(table_name='reddit', table_subscribers_name='reddit_subscribers', subscribable_type='reddit', defaults=defaults)
+        super(RedditDB, self).__init__(table_name='reddit', table_subscribers_name='reddit_subscribers', subscribable_type='reddit')

@@ -1,13 +1,4 @@
-#!/usr/bin/env python
-import requests
-import json
-import model
-from bs4 import BeautifulSoup
-import tweepy
-import datetime
-
-import stringformat
-
+__endpoint_tokens_all = 'https://api.coinmarketcap.com/v1/ticker/?limit=10000'
 __endpoint_tokens_limit = 'https://api.coinmarketcap.com/v1/ticker/?limit={}'
 __endpoint_token_scrape = 'https://coinmarketcap.com/currencies/{}'
 __endpoint_token_scrape_social = 'https://coinmarketcap.com/currencies/{}/#social'
@@ -116,7 +107,7 @@ def get_top_twitters(limit = 300):
     subscribables = []
     for token in top_tokens:
         token_scrape = requests.get(__endpoint_token_scrape.format(token.id))
-        soup = BeautifulSoup(token_scrape.text, 'lxml')
+        soup = BeautifulSoup(token_scrape.text, 'html.parser')
         try:
             twitter = soup.find('a', 'twitter-timeline').attrs['data-screen-name']
             subscribables.append(twitter)
@@ -147,7 +138,7 @@ def get_twitter(twitter, credentials):
 def get_ico_text(token):
     try:
         ico_response = requests.get(__endpoint_ico.format(token.id.lower()), headers=__headers_mozilla)
-        soup = BeautifulSoup(ico_response.text, 'lxml')
+        soup = BeautifulSoup(ico_response.text, 'html.parser')
         rel_sections = soup.find_all('div', 'white-desk ico-desk')
         fields = [
             'ticker:',
@@ -202,7 +193,7 @@ def get_ico_text(token):
 
 def get_airdrops():
     airdrop_response = requests.get(__endpoint_airdrop)
-    events = BeautifulSoup(airdrop_response.text, 'lxml').find_all('div', 'addeventatc')
+    events = BeautifulSoup(airdrop_response.text, 'html.parser').find_all('div', 'addeventatc')
     now = datetime.datetime.now()
     airdrops = []
     for e in events:
