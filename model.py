@@ -31,6 +31,7 @@ class Token(object):
         self.balance = balance
         self.name_str = '{} ({})'.format(self.name, self.symbol)
         self.url = 'https://coinmarketcap.com/currencies/{}/'.format(self.id)
+        self.logo_url = 'https://chasing-coins.com/api/v1/std/logo/{}'.format(self.symbol)
 
     @property
     def value(self):
