@@ -47,7 +47,8 @@ def get_top_tokens(limit = 100):
     for r_token in r_tokens:
         try:
             token = model.Token.from_json(r_token)
-            tokens.append(token)
+            if token is not None:
+                tokens.append(token)
         except:
             pass
     return tokens
@@ -172,15 +173,20 @@ def get_ico_text(token):
             for roi in rois:
                 amount = roi.find('div', 'roi-amount').text.encode('utf-8')
                 currency = roi.find('div', 'roi-currency').text.encode('utf-8')
-                roi_list.append('\t*Returns {}*: {}'.format(currency, amount))
+                roi_list.append('\t\t*{}*: {}\n'.format(currency, amount))
 
         if entries:
             text = '*ICO Information for {}{}:*\n'.format(token.name_str, stringformat.emoji('charts'))
-            text += '{}\n'.format(entries)
+            for entry in entries:
+                text += entry
             if price_list:
-                text += '\t*Token Price List:*\n{}\n'.format(price_list)
+                text += '\t*Current Price:*\n'
+                for price in price_list:
+                    text += price
             if roi_list:
-                text += '\n{}'.format(roi_list)
+                text += '\t*Returns:*\n'
+                for roi in roi_list:
+                    text += roi
 
             return text
         else:
