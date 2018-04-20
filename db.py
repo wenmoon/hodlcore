@@ -1,9 +1,11 @@
+local_path = os.path.dirname(os.path.realpath(__file__))
+
 #
 # Database operations relating to Market Capitalization
 #
 class MarketCapitalizationDB(object):
     def __init__(self):
-        self.database_file = 'data/hodl.db'
+        self.database_file = '{}/data/hodl.db'.format(local_path)
         self.database_table_cmc_global = 'coinmarketcap_global'
 
         dbc = sqlite3.connect(self.database_file)
@@ -54,7 +56,7 @@ class MarketCapitalizationDB(object):
 #
 class TokenDB(object):
     def __init__(self):
-        self.database_file = 'data/hodl.db'
+        self.database_file = '{}/data/hodl.db'.format(local_path)
         self.database_table_cmc_tokens = 'coinmarketcap_tokens'
 
         dbc = sqlite3.connect(self.database_file)
@@ -171,7 +173,7 @@ class TokenDB(object):
 #
 class SubscribableDB(object):
     def __init__(self, table_name, table_subscribers_name, subscribable_type, defaults = []):
-        self.database_file = 'data/hodl.db'
+        self.database_file = '{}/data/hodl.db'.format(local_path)
         self.database_table_subscribable = table_name
         self.database_table_subscribable_subscribers = table_subscribers_name
         self.subscribable_type = subscribable_type
