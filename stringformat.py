@@ -25,6 +25,9 @@ __emojis = {
     'broken_heart':     u'\U0001f494',
     'green_heart':      u'\U0001f49a',
     'orange_diamond':   u'\U0001f538',
+    'robot':            u'\U0001f916',
+    'link':             u'\U0001f517',
+    'money_bag':        u'\U0001f4b0',
 }
 
 
