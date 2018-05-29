@@ -7,6 +7,11 @@ import json
 
 import os
 
+from .model import Portfolio
+from .model import Token
+from .model import MarketCapitalization
+from .model import Subscribable
+from .model import Event
 
 local_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -55,7 +60,7 @@ class MarketCapitalizationDB(object):
         dbc.row_factory = sqlite3.Row
         try:
             latest = dbc.execute('SELECT mcap, volume, bitcoin_percentage_of_market_cap FROM {} ORDER BY timestamp DESC LIMIT 1'.format(self.database_table_cmc_global)).fetchone()
-            return model.MarketCapitalization(float(latest[0]), float(latest[1]), float(latest[2]))
+            return MarketCapitalization(float(latest[0]), float(latest[1]), float(latest[2]))
         except Error as e:
             print(e)
         dbc.close()
@@ -160,7 +165,7 @@ class TokenDB(object):
             avg_today = sum([x[0] for x in today]) / len(today)
             avg_last_week = sum([x[0] for x in last_week]) / len(last_week)
             avg_last_month = sum([x[0] for x in last_month]) / len(last_month)
-            return model.PeriodicSummary(metric_name, now[0], today[0][0], yesterday[0][0], last_week[0][0], last_month[0][0], ath[0], atl[0], avg_today, avg_last_week, avg_last_month)
+            return PeriodicSummary(metric_name, now[0], today[0][0], yesterday[0][0], last_week[0][0], last_month[0][0], ath[0], atl[0], avg_today, avg_last_week, avg_last_month)
         except Exception as e:
             print('_get_metric_summary({}, {}) Error: {}'.format(metric_name, token_id, e))
             return None
@@ -307,7 +312,7 @@ class SubscribableDB(object):
             avg_today = sum([x[0] for x in today]) / len(today)
             avg_last_week = sum([x[0] for x in last_week]) / len(last_week)
             avg_last_month = sum([x[0] for x in last_month]) / len(last_month)
-            return model.PeriodicSummary(metric_name, now[0], today[0][0], yesterday[0][0], last_week[0][0], last_month[0][0], ath[0], atl[0], avg_today, avg_last_week, avg_last_month)
+            return PeriodicSummary(metric_name, now[0], today[0][0], yesterday[0][0], last_week[0][0], last_month[0][0], ath[0], atl[0], avg_today, avg_last_week, avg_last_month)
         except Exception as e:
             print('get_subscribers({}, {}) Error: {}'.format(subscribable, self.subscribable_type, e))
             return None

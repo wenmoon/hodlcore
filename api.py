@@ -6,6 +6,12 @@ from bs4 import BeautifulSoup
 import tweepy
 import datetime
 
+from .model import Portfolio
+from .model import Token
+from .model import MarketCapitalization
+from .model import Subscribable
+from .model import Event
+
 
 __endpoint_tokens_all = 'https://api.coinmarketcap.com/v1/ticker/?limit=10000'
 __endpoint_tokens_limit = 'https://api.coinmarketcap.com/v1/ticker/?limit={}'
@@ -25,7 +31,7 @@ __headers_mozilla = {
 
 
 def get_portfolio(portfolio_config, currency):
-    portfolio = model.Portfolio()
+    portfolio = Portfolio()
     for entry in portfolio_config:
         token = get_token(entry[0])
         if token is None:
@@ -39,13 +45,13 @@ def get_portfolio(portfolio_config, currency):
 
 def get_mcap():
     mcap_json = requests.get(__endpoint_mcap).json()
-    return model.MarketCapitalization.from_json(mcap_json)
+    return MarketCapitalization.from_json(mcap_json)
 
 
 def get_token(name):
     try:
         r_token = requests.get(__endpoint_token.format(name, currency)).json()[0]
-        return model.Token.from_json(r_token)
+        return Token.from_json(r_token)
     except:
         return None
 
@@ -55,7 +61,7 @@ def get_top_tokens(limit = 100):
     tokens = []
     for r_token in r_tokens:
         try:
-            token = model.Token.from_json(r_token)
+            token = Token.from_json(r_token)
             if token is not None:
                 tokens.append(token)
         except:
@@ -68,7 +74,7 @@ def search_tokens(search, limit = 100):
     tokens = []
     for r_token in r_tokens:
         try:
-            token = model.Token.from_json(r_token)
+            token = Token.from_json(r_token)
             if token.matches(search):
                 tokens.append(token)
             if len(tokens) >= limit:
@@ -84,7 +90,7 @@ def search_token(search):
     match_token_score = 0
     for r_token in r_tokens:
         try:
-            token = model.Token.from_json(r_token)
+            token = Token.from_json(r_token)
             token_score = token.matches_score(search)
             # if token_score > 0:
             #     print('Search score for {} = {}'.format(token.name_str, token_score))
@@ -129,7 +135,7 @@ def get_top_twitters(limit = 300):
 def get_subreddit(subreddit):
     try:
         r_subreddit = requests.get(__endpoint_subreddits.format(subreddit), headers = __headers_useragent).json()['data']
-        return model.Subscribable(subreddit, r_subreddit['subscribers'], r_subreddit['url'])
+        return Subscribable(subreddit, r_subreddit['subscribers'], r_subreddit['url'])
     except KeyError:
         return None
 
@@ -140,7 +146,7 @@ def get_twitter(twitter, credentials):
     tweepy_api = tweepy.API(auth)
     try:
         user = tweepy_api.get_user(twitter)
-        return model.Subscribable(twitter, user.followers_count, 'https://twitter.com/{}'.format(twitter))
+        return Subscribable(twitter, user.followers_count, 'https://twitter.com/{}'.format(twitter))
     except tweepy.error.TweepError:
         return None
 
@@ -216,7 +222,7 @@ def get_airdrops():
             start = datetime.datetime.strptime(e.find('span', 'start').text[:10], '%m/%d/%Y')
             end = datetime.datetime.strptime(e.find('span', 'end').text[:10], '%m/%d/%Y')
             title = e.find('span', 'title').text
-            airdrop = model.Event(title, start, end)
+            airdrop = Event(title, start, end)
             airdrops.append(airdrop)
         except Exception as e:
             print(e)
