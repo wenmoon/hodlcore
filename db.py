@@ -1,3 +1,18 @@
+#!/usr/bin/env python3
+
+import time
+import sqlite3
+from sqlite3 import Error
+import json
+
+import os
+
+from .model import Portfolio
+from .model import Token
+from .model import MarketCapitalization
+from .model import Subscribable
+from .model import Event
+
 local_path = os.path.dirname(os.path.realpath(__file__))
 
 #
@@ -23,7 +38,7 @@ class MarketCapitalizationDB(object):
                          volume REAL,
                          bitcoin_percentage_of_market_cap REAL)'''.format(self.database_table_cmc_global))
             dbc.commit()
-        except Error as e:
+        except Exception as e:
             print(e)
 
     def insert(self, mcap):
@@ -45,9 +60,10 @@ class MarketCapitalizationDB(object):
         dbc.row_factory = sqlite3.Row
         try:
             latest = dbc.execute('SELECT mcap, volume, bitcoin_percentage_of_market_cap FROM {} ORDER BY timestamp DESC LIMIT 1'.format(self.database_table_cmc_global)).fetchone()
-            return model.MarketCapitalization(float(latest[0]), float(latest[1]), float(latest[2]))
-        except Error as e:
+            return MarketCapitalization(float(latest[0]), float(latest[1]), float(latest[2]))
+        except Exception as e:
             print(e)
+            return None
         dbc.close()
 
 
@@ -81,7 +97,7 @@ class TokenDB(object):
                          market_cap_usd REAL,
                          available_supply REAL)'''.format(self.database_table_cmc_tokens))
             dbc.commit()
-        except Error as e:
+        except Exception as e:
             print(e)
 
     def insert(self, tokens):
@@ -150,7 +166,7 @@ class TokenDB(object):
             avg_today = sum([x[0] for x in today]) / len(today)
             avg_last_week = sum([x[0] for x in last_week]) / len(last_week)
             avg_last_month = sum([x[0] for x in last_month]) / len(last_month)
-            return model.PeriodicSummary(metric_name, now[0], today[0][0], yesterday[0][0], last_week[0][0], last_month[0][0], ath[0], atl[0], avg_today, avg_last_week, avg_last_month)
+            return PeriodicSummary(metric_name, now[0], today[0][0], yesterday[0][0], last_week[0][0], last_month[0][0], ath[0], atl[0], avg_today, avg_last_week, avg_last_month)
         except Exception as e:
             print('_get_metric_summary({}, {}) Error: {}'.format(metric_name, token_id, e))
             return None
@@ -197,7 +213,7 @@ class SubscribableDB(object):
                         subscribable_type TEXT,
                         subscribers INTEGER)'''.format(self.database_table_subscribable_subscribers))
             dbc.commit()
-        except Error as e:
+        except Exception as e:
             print(e)
 
     def get_tracked(self):
@@ -206,7 +222,7 @@ class SubscribableDB(object):
             tracked = dbc.execute('SELECT * FROM {} WHERE subscribable_type=?'.format(self.database_table_subscribable), (self.subscribable_type,)).fetchall()
             dbc.close()
             return list(map(lambda x: x[0], tracked))
-        except Error as e:
+        except Exception as e:
             print(e)
         dbc.close()
         return []
@@ -228,7 +244,7 @@ class SubscribableDB(object):
         dbc = sqlite3.connect(self.database_file)
         try:
             dbc.execute('DELETE FROM {} WHERE name=? AND subscribable_type=? LIMIT 1'.format(self.database_table_subscribable), (subscribable, self.subscribable_type))
-        except Error as e:
+        except Exception as e:
             print(e)
         dbc.commit()
         dbc.close()
@@ -237,7 +253,7 @@ class SubscribableDB(object):
         dbc = sqlite3.connect(self.database_file)
         try:
             dbc.execute('INSERT INTO {} (name, subscribable_type, subscribers) VALUES (?, ?, ?)'.format(self.database_table_subscribable_subscribers), (subscribable.name, self.subscribable_type, subscribable.subscribers))
-        except Error as e:
+        except Exception as e:
             print(e)
         dbc.commit()
         dbc.close()
@@ -247,7 +263,7 @@ class SubscribableDB(object):
         for subscribable in subscribables:
             try:
                 dbc.execute('INSERT INTO {} (name, subscribable_type, subscribers) VALUES (?, ?, ?)'.format(self.database_table_subscribable_subscribers), (subscribable.name, self.subscribable_type, subscribable.subscribers))
-            except Error as e:
+            except Exception as e:
                 print(e)
         dbc.commit()
         dbc.close()
@@ -297,7 +313,7 @@ class SubscribableDB(object):
             avg_today = sum([x[0] for x in today]) / len(today)
             avg_last_week = sum([x[0] for x in last_week]) / len(last_week)
             avg_last_month = sum([x[0] for x in last_month]) / len(last_month)
-            return model.PeriodicSummary(metric_name, now[0], today[0][0], yesterday[0][0], last_week[0][0], last_month[0][0], ath[0], atl[0], avg_today, avg_last_week, avg_last_month)
+            return PeriodicSummary(metric_name, now[0], today[0][0], yesterday[0][0], last_week[0][0], last_month[0][0], ath[0], atl[0], avg_today, avg_last_week, avg_last_month)
         except Exception as e:
             print('get_subscribers({}, {}) Error: {}'.format(subscribable, self.subscribable_type, e))
             return None

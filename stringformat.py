@@ -1,3 +1,9 @@
+#!/usr/bin/env python3
+
+import math
+from operator import attrgetter
+
+
 __emojis = {
     'poop':             u'\U0001f4a9',
     'crashing':         u'\U0001f4c9',
