@@ -1,3 +1,8 @@
+#!/usr/bin/env python3
+
+import datetime
+
+
 class MarketCapitalization(object):
     def __init__(self, mcap_usd, volume_usd_24h, bitcoin_percentage_of_market_cap):
         self.mcap_usd = mcap_usd

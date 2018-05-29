@@ -1,3 +1,13 @@
+#!/usr/bin/env python3
+
+import time
+import sqlite3
+from sqlite3 import Error
+import json
+
+import os
+
+
 local_path = os.path.dirname(os.path.realpath(__file__))
 
 #

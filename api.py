@@ -1,3 +1,12 @@
+#!/usr/bin/env python3
+
+import requests
+import json
+from bs4 import BeautifulSoup
+import tweepy
+import datetime
+
+
 __endpoint_tokens_all = 'https://api.coinmarketcap.com/v1/ticker/?limit=10000'
 __endpoint_tokens_limit = 'https://api.coinmarketcap.com/v1/ticker/?limit={}'
 __endpoint_token_scrape = 'https://coinmarketcap.com/currencies/{}'
