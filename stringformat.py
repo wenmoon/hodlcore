@@ -128,11 +128,11 @@ def token_compared_summary(token, other_token):
     s += '```\t\t 1h:  {} vs {}\n'.format(percent(token.percent_change_1h, emo=True), percent(other_token.percent_change_1h, emo=True))
     s += '\t\t24h: {} vs {}\n'.format(percent(token.percent_change_24h, emo=True), percent(other_token.percent_change_24h, emo=True))
     s += '\t\t 7d:  {} vs {}```'.format(percent(token.percent_change_7d, emo=True), percent(other_token.percent_change_7d, emo=True))
-    mcap = other_token.mcap / token.mcap
-    mcap_price = mcap * other_token.price
+    mcap_factor = other_token.mcap / token.mcap
+    factor_price = mcap_factor * token.price
     vol_factor = other_token.volume_24h / token.volume_24h
     s += '\t*{} has {:.2f}x  the 24h volume of {}.*\n\n'.format(other_token.name, vol_factor, token.name)
-    s += '\t*If {} had the cap of {}, the USD price would be: ${} ({:.1f}x)*'.format(token.name, other_token.name, mcap_price, mcap)
+    s += '\t*If {} had the cap of {}, the USD price would be: ${} ({:.1f}x)*'.format(token.name, other_token.name, factor_price, mcap_factor)
     return s
 
 
