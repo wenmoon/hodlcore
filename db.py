@@ -38,7 +38,7 @@ class MarketCapitalizationDB(object):
                          volume REAL,
                          bitcoin_percentage_of_market_cap REAL)'''.format(self.database_table_cmc_global))
             dbc.commit()
-        except Error as e:
+        except Exception as e:
             print(e)
 
     def insert(self, mcap):
@@ -61,8 +61,9 @@ class MarketCapitalizationDB(object):
         try:
             latest = dbc.execute('SELECT mcap, volume, bitcoin_percentage_of_market_cap FROM {} ORDER BY timestamp DESC LIMIT 1'.format(self.database_table_cmc_global)).fetchone()
             return MarketCapitalization(float(latest[0]), float(latest[1]), float(latest[2]))
-        except Error as e:
+        except Exception as e:
             print(e)
+            return None
         dbc.close()
 
 
@@ -96,7 +97,7 @@ class TokenDB(object):
                          market_cap_usd REAL,
                          available_supply REAL)'''.format(self.database_table_cmc_tokens))
             dbc.commit()
-        except Error as e:
+        except Exception as e:
             print(e)
 
     def insert(self, tokens):
@@ -212,7 +213,7 @@ class SubscribableDB(object):
                         subscribable_type TEXT,
                         subscribers INTEGER)'''.format(self.database_table_subscribable_subscribers))
             dbc.commit()
-        except Error as e:
+        except Exception as e:
             print(e)
 
     def get_tracked(self):
@@ -221,7 +222,7 @@ class SubscribableDB(object):
             tracked = dbc.execute('SELECT * FROM {} WHERE subscribable_type=?'.format(self.database_table_subscribable), (self.subscribable_type,)).fetchall()
             dbc.close()
             return list(map(lambda x: x[0], tracked))
-        except Error as e:
+        except Exception as e:
             print(e)
         dbc.close()
         return []
@@ -243,7 +244,7 @@ class SubscribableDB(object):
         dbc = sqlite3.connect(self.database_file)
         try:
             dbc.execute('DELETE FROM {} WHERE name=? AND subscribable_type=? LIMIT 1'.format(self.database_table_subscribable), (subscribable, self.subscribable_type))
-        except Error as e:
+        except Exception as e:
             print(e)
         dbc.commit()
         dbc.close()
@@ -252,7 +253,7 @@ class SubscribableDB(object):
         dbc = sqlite3.connect(self.database_file)
         try:
             dbc.execute('INSERT INTO {} (name, subscribable_type, subscribers) VALUES (?, ?, ?)'.format(self.database_table_subscribable_subscribers), (subscribable.name, self.subscribable_type, subscribable.subscribers))
-        except Error as e:
+        except Exception as e:
             print(e)
         dbc.commit()
         dbc.close()
@@ -262,7 +263,7 @@ class SubscribableDB(object):
         for subscribable in subscribables:
             try:
                 dbc.execute('INSERT INTO {} (name, subscribable_type, subscribers) VALUES (?, ?, ?)'.format(self.database_table_subscribable_subscribers), (subscribable.name, self.subscribable_type, subscribable.subscribers))
-            except Error as e:
+            except Exception as e:
                 print(e)
         dbc.commit()
         dbc.close()

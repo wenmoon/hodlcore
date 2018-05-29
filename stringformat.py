@@ -39,7 +39,7 @@ __emojis = {
 
 def emoji(key):
     try:
-        return __emojis[key].encode('utf8')
+        return __emojis[key]
     except Exception:
         return ''
 
